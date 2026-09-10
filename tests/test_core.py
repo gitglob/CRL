@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from pathlib import Path
+
 import numpy as np
 import pytest
 
@@ -219,3 +221,16 @@ def test_bootstrap_reports_a_degenerate_interval_for_one_seed():
 
 def test_bootstrap_ignores_missing_values():
     assert bootstrap([None, None])["n"] == 0
+
+
+# --- CLAUDE.md stays short enough to actually be read -----------------
+
+
+def test_claude_md_respects_its_own_length_and_width_rules():
+    # CLAUDE.md pins its own limits so this test has one fixed source of truth,
+    # rather than the 80/100 numbers drifting out of sync between the two files.
+    path = Path(__file__).resolve().parents[1] / "CLAUDE.md"
+    lines = path.read_text().splitlines()
+    assert len(lines) <= 80, f"CLAUDE.md has {len(lines)} lines, limit is 80"
+    too_long = [(n, len(line)) for n, line in enumerate(lines, 1) if len(line) > 100]
+    assert not too_long, f"CLAUDE.md lines over 100 chars: {too_long}"
