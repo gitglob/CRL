@@ -1,0 +1,9 @@
+# Is the task suite non-degenerate? Trains a fresh DQN per task and evaluates each
+# resulting expert on every other task. If a task-A expert already scores ~500 on
+# B, C and D there is no interference for the main study to measure.
+inherits: base.yaml
+benchmark:
+  seeds: [0]
+  arms: [scratch]
+output:
+  root: results/preflight

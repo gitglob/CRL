@@ -1,0 +1,16 @@
+inherits: base.yaml
+benchmark:
+  seeds: [0]
+train:
+  timesteps: 2000
+  learning_starts: 200
+  buffer_capacity: 5000
+  epsilon_decay_fraction: 0.5
+replay:
+  capacity: 1000
+eval:
+  every: 500
+  episodes: 2
+  matrix_episodes: 3
+output:
+  root: results/smoke

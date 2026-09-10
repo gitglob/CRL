@@ -1,0 +1,47 @@
+env:
+  max_steps: 500
+  max_return: 500.0
+tasks:
+  default: {gravity: 9.8, masscart: 1.0, masspole: 0.1, length: 0.5, force_mag: 10.0}
+  gravity: {gravity: 20.0, masscart: 1.0, masspole: 0.1, length: 0.5, force_mag: 10.0}
+  pole: {gravity: 9.8, masscart: 1.0, masspole: 0.1, length: 0.1, force_mag: 10.0}
+  force: {gravity: 9.8, masscart: 1.0, masspole: 0.1, length: 0.5, force_mag: 4.0}
+benchmark:
+  seeds: [0, 1, 2, 3, 4]
+  arms: [scratch, finetune, replay, cbp, replay_cbp, multitask]
+  order: [default, gravity, pole, force]
+  cycles: 1
+train:
+  timesteps: 100000
+  gamma: 0.99
+  learning_rate: 0.001
+  batch_size: 64
+  hidden_sizes: [128, 128]
+  buffer_capacity: 50000
+  learning_starts: 1000
+  train_every: 1
+  target_tau: 0.005
+  gradient_clip: 10.0
+  epsilon_start: 1.0
+  epsilon_end: 0.05
+  epsilon_decay_fraction: 0.1
+  l2_lambda: 0.0
+  device: auto
+replay:
+  capacity: 20000
+  ratio: 0.5
+cbp:
+  replacement_rate: 0.0001
+  decay_rate: 0.99
+  maturity_threshold: 100
+  dead_threshold: 0.025
+eval:
+  every: 5000
+  episodes: 5
+  matrix_episodes: 20
+  at_step_zero: true
+output:
+  root: results/continual
+wandb:
+  enabled: false
+  project: cartpole-continual

@@ -1,0 +1,10 @@
+# Plasticity side-study: three passes over the task order at the same total budget.
+# Task revisits are where plasticity loss actually shows up.
+inherits: base.yaml
+benchmark:
+  arms: [finetune, replay, cbp, replay_cbp]
+  cycles: 3
+train:
+  timesteps: 34000
+output:
+  root: results/cycles
