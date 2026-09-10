@@ -32,12 +32,11 @@ mirror the sibling repo `/home/pangr/dev/FourRooms_v0`.
 - Never set physics on a gymnasium env directly — always go through `make_task()`. Wrappers do
   not forward attribute writes, and `total_mass`/`polemass_length` are cached in `__init__`.
 - Bootstrap on `terminated` only. The 500-step limit is truncation, not termination.
-- Every arm uses `AdamCBP`, so no arm is advantaged by a different optimizer implementation.
 - Scratch and continual runs must share an identical eval grid or their AUCs are incomparable.
-- Preserve the invariants the tests assert: `replay` is bit-identical to `finetune` on task 1,
-  `cbp` to `replay_cbp` on task 1, and `replacement_rate: 0` to plain DQN.
 - Keep `torch.set_num_threads(1)`. Without it parallel workers oversubscribe the cores and a
   study takes an order of magnitude longer.
 - Don't launch `config/base.yaml` unprompted: ~10M env steps and hours of compute. Run
   `config/preflight.yaml` first — if the variants don't interfere, the whole study is uninformative.
-- Run the tests and the smoke study before claiming a change works.
+- Run the tests and the smoke study before claiming a change works. They pin the equalities the
+  whole comparison rests on: `replay` is bit-identical to `finetune` on task 1, `cbp` to
+  `replay_cbp` on task 1, and `replacement_rate: 0` to plain DQN.
