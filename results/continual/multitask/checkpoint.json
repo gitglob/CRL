@@ -1,0 +1,9 @@
+{
+  "signature": "a4b3acbe5c5110736925f92c3567a699e373aca506cb0d6fc2e55e557dd40684",
+  "arm": "multitask",
+  "seed": 0,
+  "blocks": [
+    "multitask"
+  ],
+  "model": "model.pt"
+}

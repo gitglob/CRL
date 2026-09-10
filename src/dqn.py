@@ -8,8 +8,7 @@ import torch.nn.functional as F
 from .cbp import AdamCBP, FeatureProbe, attach, plasticity
 from .replay import PersistentMemory, Replay
 
-# A 4-128-128-2 net is far too small to benefit from intra-op threading, and a study runs
-# dozens of these processes at once: without this they oversubscribe every core.
+# The net is far too small for intra-op threading, and parallel workers would oversubscribe.
 torch.set_num_threads(1)
 
 
@@ -29,14 +28,15 @@ def epsilon(settings, steps, budget):
 
 
 def resolve_device(name):
-    if name == "auto":
-        return "cuda" if torch.cuda.is_available() else "cpu"
-    return name
+    """GPU only: falling back to the CPU silently is a broken environment, not a default."""
+    if not torch.cuda.is_available():
+        raise RuntimeError("CUDA is unavailable; this study runs on the GPU only. Install requirements-nn.txt.")
+    return "cuda" if name == "auto" else name
 
 
 @torch.no_grad()
 def double_targets(reward, terminated, next_target, next_online, gamma):
-    """Truncation at the step limit is not a terminal state, so only `terminated` stops the bootstrap."""
+    """Only `terminated` stops the bootstrap; truncation at the step limit is not terminal."""
     actions = next_online.argmax(dim=1)
     continuation = next_target.gather(1, actions[:, None]).squeeze(1)
     return reward + gamma * torch.where(terminated, torch.zeros_like(continuation), continuation)
@@ -71,9 +71,7 @@ class DQNAgent:
         self.replay = Replay(self.settings["buffer_capacity"], obs_size)
         self.memory = PersistentMemory(config["replay"]["capacity"], obs_size) if self.uses_replay else None
         self.sample_rng = np.random.default_rng(streams["replay_sampling"])
-        # The reservoir draws on its own stream: sharing one with minibatch sampling would
-        # make a replay agent see different batches than fine-tuning on the very first task,
-        # where the two are supposed to be identical.
+        # Its own stream: sharing with minibatch draws would split replay from finetune on task 1.
         self.memory_rng = np.random.default_rng(streams["memory"])
         self.explore_rng = np.random.default_rng(streams["exploration"])
         self.actions = actions
@@ -95,20 +93,34 @@ class DQNAgent:
         values = self.online(torch.as_tensor(state, dtype=torch.float32, device=self.device)[None])
         return int(values.argmax(dim=1).item())
 
+    @torch.no_grad()
+    def act_batch(self, states, exploration=0.0):
+        """One forward pass for all slots, drawing explore_rng as sequential act() calls do."""
+        values = self.online(torch.as_tensor(np.asarray(states, dtype=np.float32), device=self.device))
+        greedy = values.argmax(dim=1).tolist()
+        if not exploration:
+            return [int(action) for action in greedy]
+        actions = []
+        for action in greedy:
+            # Interleaved per slot: a vectorised random() then integers() would reorder the draws.
+            if self.explore_rng.random() < exploration:
+                actions.append(int(self.explore_rng.integers(0, self.actions)))
+            else:
+                actions.append(int(action))
+        return actions
+
     def observe(self, state, action, reward, next_state, terminated):
         self.replay.add(state, action, reward, next_state, terminated)
         if self.memory is not None:
             self.memory.absorb(self.memory_rng, self.task, state, action, reward, next_state, terminated)
 
     def ready(self):
-        # Gated on the current task's own transitions: otherwise a replay agent would open
-        # every later task with a thousand gradient steps of pure rehearsal.
+        # Gated on this task's own transitions, or replay would open later tasks on pure rehearsal.
         return self.replay.size >= self.settings["learning_starts"]
 
     def batch(self):
         size = self.settings["batch_size"]
-        # Rehearsal only ever draws from *earlier* tasks. During the first task there is
-        # nothing to rehearse, so a replay agent must behave exactly like fine-tuning.
+        # Rehearsal draws only from earlier tasks, so on task 1 replay must equal fine-tuning.
         rehearsable = self.memory.past_size(self.task) if self.memory is not None else 0
         past = int(round(size * self.config["replay"]["ratio"])) if rehearsable > 0 else 0
         current = self.replay.sample(self.sample_rng, size - past, self.device)
@@ -119,8 +131,7 @@ class DQNAgent:
 
     def optimize(self):
         batch = self.batch()
-        # Capture only the s-batch: the s' forward below is off-gradient and its
-        # activations describe a distribution the update never touched.
+        # Capture only the s-batch: the s' forward below is off-gradient and never updated.
         self.probe.capturing = True
         values = self.online(batch["state"]).gather(1, batch["action"][:, None]).squeeze(1)
         self.probe.capturing = False

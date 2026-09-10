@@ -7,7 +7,7 @@ tasks:
   pole: {gravity: 9.8, masscart: 1.0, masspole: 0.1, length: 0.1, force_mag: 10.0}
   force: {gravity: 9.8, masscart: 1.0, masspole: 0.1, length: 0.5, force_mag: 4.0}
 benchmark:
-  seeds: [0, 1, 2, 3, 4]
+  seeds: [0]
   arms: [scratch, finetune, replay, cbp, replay_cbp, multitask]
   order: [default, gravity, pole, force]
   cycles: 1
@@ -15,11 +15,13 @@ train:
   timesteps: 100000
   gamma: 0.99
   learning_rate: 0.001
-  batch_size: 64
+  batch_size: 128
   hidden_sizes: [128, 128]
   buffer_capacity: 50000
   learning_starts: 1000
-  train_every: 1
+  # batch_size 64 * train_every holds the samples-per-transition ratio of a serial run.
+  num_envs: 10
+  train_every: 2
   target_tau: 0.005
   gradient_clip: 10.0
   epsilon_start: 1.0
@@ -42,6 +44,7 @@ eval:
   at_step_zero: true
 output:
   root: results/continual
+  videos: true
 wandb:
   enabled: false
   project: cartpole-continual

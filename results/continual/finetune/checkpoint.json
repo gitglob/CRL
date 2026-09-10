@@ -1,0 +1,12 @@
+{
+  "signature": "9dd1e0e0c5f40eef6144a619d7acc7f705c351841b8e3616c6db85d748280a1d",
+  "arm": "finetune",
+  "seed": 0,
+  "blocks": [
+    "default",
+    "gravity",
+    "pole",
+    "force"
+  ],
+  "model": "model.pt"
+}

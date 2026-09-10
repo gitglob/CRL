@@ -121,10 +121,7 @@ def test_resetting_a_unit_restores_a_fresh_adam_step_size():
 
 
 def test_zeroing_only_the_moments_inflates_the_step_which_is_why_adamcbp_exists():
-    # Stock Adam keeps one scalar step per parameter tensor, so its bias correction cannot
-    # be reset per unit. The replaced unit then takes several times the intended learning
-    # rate for its first tens of updates - inside the maturity window where it is supposed
-    # to prove itself. This is the whole reason AdamCBP exists.
+    # Stock Adam's scalar step cannot reset per unit, so a replaced unit overshoots: hence AdamCBP.
     moves = step_sizes_after_reset(("exp_avg", "exp_avg_sq"))
     assert max(moves) > 5 * 0.1
 
@@ -183,8 +180,7 @@ def test_replacement_resets_utility_mean_activation_and_age(generator):
 
 
 def test_replacement_preserves_the_output_at_the_units_mean_activation(generator):
-    # The next-layer bias fold: without it, deleting a strongly-on low-variance unit
-    # shifts every Q-value by a large per-action constant.
+    # Without the bias fold, deleting a strongly-on low-variance unit shifts every Q-value.
     incoming, outgoing = make_pair(width=4)
     cbp = ContinualBackprop([(incoming, outgoing)], cbp_settings(rate=0.26), generator)
     state = cbp.state[0]
@@ -370,6 +366,7 @@ def tiny(config, root, arm="finetune"):
     config["eval"]["episodes"] = 1
     config["eval"]["matrix_episodes"] = 1
     config["output"]["root"] = str(root)
+    config["output"]["videos"] = False
     return train(config, arm, 0, root / arm / "seed0")
 
 
@@ -417,8 +414,7 @@ def test_multitask_trains_on_every_variant_in_one_block(config, tmp_path):
 
 
 def test_replay_is_identical_to_finetuning_during_the_first_task(config):
-    # Nothing has been learned yet, so there is nothing to rehearse: any difference here
-    # would be an uncontrolled second intervention rather than persistent replay.
+    # Nothing precedes task 1, so any difference here would be a second intervention.
     config["replay"]["capacity"] = 16  # small enough that the reservoir overflows and draws RNG
     plain = DQNAgent(config, "finetune", 0, 4, 2, streams(0))
     rehearsing = DQNAgent(config, "replay", 0, 4, 2, streams(0))
@@ -445,8 +441,7 @@ def test_replay_rehearses_only_earlier_tasks(config):
 
 
 def test_torch_is_pinned_to_one_thread():
-    # A study runs dozens of these processes at once; intra-op threading only makes them
-    # fight over cores, and it also perturbs floating-point reduction order run to run.
+    # Parallel workers would fight over cores, and threading perturbs float reduction order.
     assert torch.get_num_threads() == 1
 
 
@@ -468,4 +463,5 @@ def test_different_seeds_produce_different_runs(config, tmp_path):
     first = train(config, "finetune", 0, tmp_path / "s0")
     second = train(config, "finetune", 1, tmp_path / "s1")
     assert first["signature"] != second["signature"]
-    assert first["auc"] != second["auc"]
+    # Not auc: one greedy episode on an 8x8 net is too quantized to separate seeds at this budget.
+    assert first["train_episodes"] != second["train_episodes"]

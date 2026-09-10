@@ -7,17 +7,23 @@ from pathlib import Path
 import numpy as np
 
 from .utils.config import parser, resolve, run_directory, task_order
-from .utils.envs import action_count, make_task, observation_size, task_fingerprint
+from .utils.envs import action_count, make_tasks, observation_size, task_fingerprint
 from .utils.evaluate import evaluate, evaluate_all
 from .utils.io import WandbLogger, fingerprint, save_config, save_json, versions
 from .utils.metrics import area_under_curve
+from .utils.video import save_clips
 
 STREAMS = ("env", "exploration", "replay_sampling", "cbp_reinit", "weight_init", "memory")
 
 
 def streams(seed):
-    """Independent generators per purpose, so adding CBP cannot shift the env or exploration draws."""
+    """One generator per purpose, so adding CBP cannot shift the env or exploration draws."""
     return dict(zip(STREAMS, np.random.SeedSequence(seed).spawn(len(STREAMS))))
+
+
+def env_seeds(key, count):
+    """generate_state is pure and prefix-stable, so slot 0 keeps the seed a serial run drew."""
+    return [int(s) for s in key.generate_state(count)]
 
 
 def blocks_for(config, arm, tasks):
@@ -52,7 +58,11 @@ def train(config, arm, seed, out, tasks=None, overwrite=False):
     save_config(out / "config.yaml", config)
 
     settings = config["train"]
+    num_envs = settings["num_envs"]
     per_block = settings["timesteps"] * (len(order) if arm == "multitask" else 1)
+    # study() and the tests call train() without validate(), so the eval grid is guarded here too.
+    if per_block % num_envs or config["eval"]["every"] % num_envs:
+        raise ValueError(f"train.num_envs={num_envs} must divide the block budget and eval.every")
     keys = streams(seed)
     agent = DQNAgent(config, arm, seed, observation_size(config), action_count(config), keys)
     logger = WandbLogger(config, f"{arm}-seed{seed}" + (f"-{blocks[0]}" if arm == "scratch" else ""))
@@ -69,12 +79,14 @@ def train(config, arm, seed, out, tasks=None, overwrite=False):
 
     for block, name in enumerate(blocks):
         pool = order if arm == "multitask" else [name]
+        slot_seeds = env_seeds(keys["env"], num_envs)
         envs = {}
         for task in pool:
-            env = make_task(config, task)
-            # Seed once; re-seeding every episode would replay one identical initial state.
-            env.reset(seed=int(keys["env"].generate_state(1)[0]))
-            envs[task] = env
+            group = make_tasks(config, task, num_envs)
+            for slot, env in enumerate(group):
+                # Seed once per slot; re-seeding every episode would replay one initial state.
+                env.reset(seed=slot_seeds[slot])
+            envs[task] = group
         agent.begin_task(name)
 
         timer = time.perf_counter()
@@ -103,10 +115,11 @@ def train(config, arm, seed, out, tasks=None, overwrite=False):
             print(f"[train {arm}/{name}/seed{seed}] {block_steps:,}/{per_block:,} normalized={measured['normalized']:.2f}", flush=True)
 
         rng = np.random.default_rng(keys["env"])
-        task = pool[0] if arm != "multitask" else pool[int(rng.integers(0, len(pool)))]
-        state, _ = envs[task].reset()
-        episode_return, episode_steps = 0.0, 0
-        block_steps, next_eval = 0, 0
+        tasks, states, returns, ends = [], [], [0.0] * num_envs, [False] * num_envs
+        for slot in range(num_envs):
+            tasks.append(pool[0] if arm != "multitask" else pool[int(rng.integers(0, len(pool)))])
+            states.append(envs[tasks[slot]][slot].reset()[0])
+        block_steps, next_eval, credit = 0, 0, 0
         timer = time.perf_counter()
         while block_steps < per_block:
             if block_steps >= next_eval:
@@ -114,21 +127,30 @@ def train(config, arm, seed, out, tasks=None, overwrite=False):
                 measure(block_steps)
                 next_eval = (block_steps // config["eval"]["every"] + 1) * config["eval"]["every"]
                 timer = time.perf_counter()
-            action = agent.act(state, epsilon(settings, block_steps, per_block))
-            next_state, reward, terminated, truncated, _ = envs[task].step(action)
-            agent.observe(state, action, float(reward), next_state, terminated)
-            episode_return += float(reward)
-            episode_steps += 1
-            block_steps += 1
-            total_steps += 1
-            state = next_state
-            if agent.ready() and block_steps % settings["train_every"] == 0:
-                agent.optimize()
-            if terminated or truncated:
-                episodes.append({"env_steps": total_steps, "task": task, "return": episode_return})
-                task = pool[0] if arm != "multitask" else pool[int(rng.integers(0, len(pool)))]
-                state, _ = envs[task].reset()
-                episode_return, episode_steps = 0.0, 0
+            width = min(num_envs, per_block - block_steps)
+            actions = agent.act_batch(states, epsilon(settings, block_steps, per_block))
+            for slot in range(width):
+                next_state, reward, terminated, truncated, _ = envs[tasks[slot]][slot].step(actions[slot])
+                # observe before states[slot] is rebound: the buffer copies the row it is handed.
+                agent.observe(states[slot], actions[slot], float(reward), next_state, terminated)
+                returns[slot] += float(reward)
+                states[slot] = next_state
+                ends[slot] = terminated or truncated
+            block_steps += width
+            total_steps += width
+            # Credit, not a modulo: striding by num_envs would cap this at one update per pass.
+            credit += width
+            while credit >= settings["train_every"]:
+                credit -= settings["train_every"]
+                if agent.ready():
+                    agent.optimize()
+            for slot in range(width):
+                if not ends[slot]:
+                    continue
+                episodes.append({"env_steps": total_steps, "task": tasks[slot], "return": returns[slot]})
+                tasks[slot] = pool[0] if arm != "multitask" else pool[int(rng.integers(0, len(pool)))]
+                states[slot] = envs[tasks[slot]][slot].reset()[0]
+                returns[slot], ends[slot] = 0.0, False
         train_s += time.perf_counter() - timer
         measure(per_block)
 
@@ -137,8 +159,9 @@ def train(config, arm, seed, out, tasks=None, overwrite=False):
         eval_s += time.perf_counter() - timer
         eval_steps += sum(report["eval_env_steps"] for report in evaluations.values())
         matrix.append({"block": block, "task": name, "env_steps": total_steps, "evaluations": evaluations})
-        for env in envs.values():
-            env.close()
+        for group in envs.values():
+            for env in group:
+                env.close()
 
     auc = {}
     for block, name in enumerate(blocks):
@@ -146,12 +169,14 @@ def train(config, arm, seed, out, tasks=None, overwrite=False):
             auc[name] = area_under_curve(curve, block)
 
     agent.save(out / "model.pt", {"signature": signature, "arm": arm, "seed": seed, "blocks": blocks})
+    # A scratch run is a single-task expert; every other arm spans all four tasks.
+    clips = save_clips(agent, config, out, blocks if arm == "scratch" else order) if config["output"]["videos"] else []
     save_json(out / "checkpoint.json", {"signature": signature, "arm": arm, "seed": seed, "blocks": blocks, "model": "model.pt"})
     metrics = {"signature": signature, "arm": arm, "seed": seed, "blocks": blocks, "order": order,
                "physics": task_fingerprint(config), "budget_per_block": per_block, "env_steps": total_steps,
                "eval_env_steps": eval_steps, "updates": agent.updates, "train_seconds": train_s, "eval_seconds": eval_s,
                "matrix": matrix, "learning_curve": curve, "jumpstart": jumpstart, "auc": auc,
-               "plasticity": diagnostics, "train_episodes": episodes, "versions": versions()}
+               "plasticity": diagnostics, "train_episodes": episodes, "clips": clips, "versions": versions()}
     save_json(out / "metrics.json", metrics)
     return metrics
 
@@ -163,7 +188,7 @@ def main():
     seed = config["benchmark"]["seeds"][0]
     tasks = [args.task] if args.task else None
     root = args.out or config["output"]["root"]
-    out = run_directory(root, arm, seed, args.task if arm == "scratch" else None)
+    out = run_directory(root, arm, args.task if arm == "scratch" else None)
     train(config, arm, seed, out, tasks, args.overwrite)
 
 

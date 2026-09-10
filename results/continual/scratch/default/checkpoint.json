@@ -1,0 +1,9 @@
+{
+  "signature": "f228770c29937f6776becc41d13e275a31a6198f380a7f157eeb18ed2927f660",
+  "arm": "scratch",
+  "seed": 0,
+  "blocks": [
+    "default"
+  ],
+  "model": "model.pt"
+}

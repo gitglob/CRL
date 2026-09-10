@@ -16,14 +16,18 @@ def make_task(config, name, render_mode=None):
         if not hasattr(core, key):
             raise RuntimeError(f"gymnasium CartPoleEnv has no attribute {key}; the physics override would be silent")
         setattr(core, key, float(spec[key]))
-    # Both are cached in CartPoleEnv.__init__, so overriding length or the masses alone
-    # leaves a plausible-looking environment that is not the system we claim to simulate.
+    # Both are cached in CartPoleEnv.__init__, so setting length or the masses alone lies.
     core.total_mass = core.masspole + core.masscart
     core.polemass_length = core.masspole * core.length
     if getattr(core, "sutton_barto_reward", False):
         raise RuntimeError("CartPole must use the +1 per step reward; normalization assumes it")
     verify_task(env, config, name)
     return env
+
+
+def make_tasks(config, name, count):
+    """One env per slot; SyncVectorEnv's autoreset would corrupt the terminating transition."""
+    return [make_task(config, name) for _ in range(count)]
 
 
 def verify_task(env, config, name):

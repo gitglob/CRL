@@ -1,0 +1,22 @@
+{
+  "env_steps": 400000,
+  "block": 3,
+  "task": "force",
+  "budget": 400000,
+  "normalized": 1.0,
+  "return_mean": 500.0,
+  "updates": 198020,
+  "buffer": 50000,
+  "memory": 0,
+  "loss": 0.010082805529236794,
+  "weight_norm_0": 24.439231872558594,
+  "bias_norm_0": 7.307122707366943,
+  "weight_norm_1": 292.83197021484375,
+  "bias_norm_1": 2.5445284843444824,
+  "weight_norm_2": 16.709314346313477,
+  "bias_norm_2": 0.09272894263267517,
+  "dead_fraction_0": 0.40625,
+  "stable_rank_0": 7.136044502258301,
+  "dead_fraction_1": 0.5234375,
+  "stable_rank_1": 6.894311904907227
+}

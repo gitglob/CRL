@@ -18,7 +18,9 @@ mirror the sibling repo `/home/pangr/dev/FourRooms_v0`. Set up and verified, nev
   multitask shapes.
 - `src/utils/` — `envs` (the only env factory), `evaluate`, `metrics` (AP/FT/F formulas),
   `study` (orchestration + audit), `compare` (figures + REPORT.md), `config`, `io`.
-- Artifacts: `results/<root>/<arm>[/<task>]/seed<N>/{config.yaml,metrics.json,model.pt}`.
+- Artifacts: `results/<root>/<arm>[/<task>]/{config.yaml,metrics.json,model.pt}`, plus one
+  `videos/<task>.gif` per task from the finished policy. One seed per study, so the seed is not
+  in the path and `benchmark.seeds` must hold exactly one entry.
 
 ## Commands
 
@@ -30,42 +32,38 @@ mirror the sibling repo `/home/pangr/dev/FourRooms_v0`. Set up and verified, nev
 
 ## Rules
 
-- Keep this file to at most 80 lines, each line at most 100 characters. Enforced by
-  `tests/test_core.py::test_claude_md_respects_its_own_length_and_width_rules`.
-- Never stage, commit or push git changes unless explicitly asked to.
-- Match the existing style: **no type hints**, dicts not dataclasses, long lines are fine,
-  rare one-line docstrings that state an invariant, `print(f"[tag] ...", flush=True)` for
-  logging.
-- Never set physics on a gymnasium env directly — always go through `make_task()`. Wrappers
-  do not forward attribute writes, and `total_mass`/`polemass_length` are cached in
-  `__init__`.
+- This file: at most 80 lines of at most 100 chars. Comments and docstrings: one line, at most
+  100 chars. Both enforced by `tests/test_core.py`.
+- No type hints, dicts not dataclasses, long code lines fine, `print(f"[tag] ...", flush=True)`.
+- Never stage, commit or push unless asked.
+- GPU only: `resolve_device` raises without CUDA and `train.device` rejects `cpu`.
+- The net is too small for the GPU to notice batch size, so prefer fewer, larger updates.
+  Parallelism is `train.num_envs` slots per iteration plus `--workers` across runs.
+- `train.num_envs` must divide `train.timesteps` and `eval.every`, or the eval grid drifts and
+  scratch and continual AUCs stop being comparable.
+- Never set physics on a gymnasium env directly — always `make_task()`. Wrappers do not forward
+  attribute writes, and `total_mass`/`polemass_length` are cached in `__init__`.
 - Bootstrap on `terminated` only. The 500-step limit is truncation, not termination.
-- Scratch and continual runs must share an identical eval grid or their AUCs are
-  incomparable.
-- Keep `torch.set_num_threads(1)`. Without it parallel workers oversubscribe the cores
-  and a study takes an order of magnitude longer.
-- Don't launch `config/base.yaml` unprompted: ~10M env steps and hours of compute. Run
-  `config/preflight.yaml` first — if the variants don't interfere, the whole study is
+- Keep `torch.set_num_threads(1)`, or parallel workers oversubscribe the cores.
+- Run `config/preflight.yaml` before the sweep: if the variants don't interfere, it is
   uninformative.
-- Run the tests and the smoke study before claiming a change works. They pin the
-  equalities the whole comparison rests on: `replay` is bit-identical to `finetune` on
-  task 1, `cbp` to `replay_cbp` on task 1, and `replacement_rate: 0` to plain DQN.
+- Run the tests and the smoke study before claiming a change works. They pin `replay` ==
+  `finetune` on task 1, `cbp` == `replay_cbp` on task 1, and `replacement_rate: 0` == plain DQN.
 
 ## TODO
 
-Nothing has been trained yet: the repo is set up and verified, but unrun.
+The sweep has been run: `results/continual` holds all nine runs, `REPORT.md`, five figures and
+24 clips. Headline: both interventions lost to plain fine-tuning (AP 0.749 vs 0.153 replay,
+0.019 cbp), which is the opposite of the hypothesis. README `## Main results` has the reading.
 
-- [ ] Run `config/preflight.yaml` first on a compute machine. If a `default` expert
-      already scores near 500 on the other three tasks, the variants don't interfere
-      and the study is uninformative; if `pole` plateaus far below 500 it is unsolvable
-      at this budget, so relax `length: 0.1` → `0.25` in `config/base.yaml` and rerun.
-- [ ] Run the main sweep: `config/base.yaml --workers 8` (~10M env steps, a few hours).
-- [ ] Rewrite the README `## Main results` section with the real table, figures and
-      takeaways.
-- [ ] Only if CBP comes back null: `config/cycles.yaml` runs three passes over the four
-      tasks at the same total budget, where revisits give plasticity loss more room to
-      appear.
-- [ ] Shipped but never run: `config/cbp_slow.yaml` (replacement rate 1e-5) and
-      `config/cbp_l2.yaml`.
-- [ ] Known limitations if there is compute to spare: one fixed task order, and five
-      seeds against DQN variance means close results are ties.
+- [ ] `config/cbp_slow.yaml` (replacement rate 1e-5) is the first follow-up. At 1e-4 each unit is
+      replaced ~20 times per run and stable rank collapses to 1.9 against 6.9 for fine-tuning, so
+      the cbp arms plausibly failed from too much plasticity rather than too little.
+- [ ] `config/cbp_l2.yaml` is shipped and still unrun.
+- [ ] More seeds would matter most. At one seed the single-task collapse in the `scratch` baseline
+      is as large as the gaps between arms, so no ranking here is established.
+- [ ] `config/cycles.yaml` runs three passes over the four tasks at the same total budget, where
+      revisits give plasticity loss more room to appear.
+- [ ] Fine-tuning's forgetting is negative: a good `force` policy already solves `default` and
+      `gravity`. Only `pole` is genuinely distinct, so the suite may be too similar to separate
+      retention from transfer. A more dissimilar fourth task would sharpen the comparison.

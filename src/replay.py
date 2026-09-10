@@ -34,17 +34,12 @@ class Replay:
         return _batch(self.data, indices, device)
 
     def clear(self):
-        """Every arm starts a task with an empty current buffer, so persistent replay is the only difference."""
+        """Every arm starts a task empty, so persistent replay is the only difference."""
         self.size, self.total = 0, 0
 
 
 class PersistentMemory:
-    """Bounded cross-task memory: an equal share of every task seen so far.
-
-    Filled by reservoir sampling *during* each task rather than snapshotted at the
-    boundary, so the retained states cover the whole learning trajectory and not just
-    the narrow tube visited by the near-greedy policy at the end.
-    """
+    """Bounded cross-task memory: an equal reservoir share of every task seen so far."""
 
     def __init__(self, capacity, obs_size):
         self.capacity, self.obs_size = capacity, obs_size

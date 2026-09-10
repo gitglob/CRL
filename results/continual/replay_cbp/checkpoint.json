@@ -1,0 +1,12 @@
+{
+  "signature": "5b9d54787d6b73048c70ec15267fc2d42c129fd3747754c939c8a4dcff9d127a",
+  "arm": "replay_cbp",
+  "seed": 0,
+  "blocks": [
+    "default",
+    "gravity",
+    "pole",
+    "force"
+  ],
+  "model": "model.pt"
+}

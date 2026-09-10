@@ -7,14 +7,7 @@ import torch.nn as nn
 
 
 class AdamCBP(torch.optim.Optimizer):
-    """Adam whose step counter is elementwise, so a reinitialised unit's bias correction can be reset.
-
-    Stock torch.optim.Adam keeps one scalar step per parameter tensor. Zeroing only the
-    moments of a replaced unit then leaves its bias correction at the global value, which
-    inflates that unit's first updates by up to 6.5x the intended learning rate - right
-    inside the maturity window where the new unit is supposed to establish itself. Every
-    arm uses this optimizer so the comparison is not confounded by two Adam implementations.
-    """
+    """Adam with an elementwise step counter so a replaced unit's bias correction resets too."""
 
     def __init__(self, params, lr=1e-3, betas=(0.9, 0.999), eps=1e-8, weight_decay=0.0):
         super().__init__(params, {"lr": lr, "betas": betas, "eps": eps, "weight_decay": weight_decay})
@@ -51,11 +44,7 @@ class AdamCBP(torch.optim.Optimizer):
 
 
 class ContinualBackprop:
-    """Continually reinitialise the least useful mature hidden units (Dohare et al.).
-
-    Utilities are only comparable inside a layer, so the replacement accumulator and the
-    argmin are strictly per layer.
-    """
+    """Reinitialise the least useful mature hidden units, strictly per layer (Dohare et al.)."""
 
     def __init__(self, layers, settings, generator, device="cpu"):
         self.pairs = layers
@@ -107,8 +96,7 @@ class ContinualBackprop:
         chosen = eligible[torch.argsort(corrected_util[eligible])[:count]]
         bound = 1.0 / math.sqrt(incoming.in_features)
         for unit in chosen.tolist():
-            # Fold the unit's mean contribution into the next bias before deleting it, so the
-            # layer's output is unchanged for a unit sitting at its own average activation.
+            # Fold the unit's mean contribution into the next bias so deleting it shifts no output.
             outgoing.bias.add_(outgoing.weight[:, unit] * corrected_mean[unit])
             incoming.weight[unit, :] = torch.empty(incoming.in_features, device=incoming.weight.device).uniform_(-bound, bound, generator=self.generator)
             incoming.bias[unit] = 0.0
@@ -128,12 +116,7 @@ class ContinualBackprop:
 
 
 class FeatureProbe:
-    """Stashes hidden activations for the batch the gradient flows through.
-
-    Every arm carries one, so the plasticity diagnostics are available even where CBP is
-    absent - a null CBP result is only interpretable if we can show whether the baseline
-    lost plasticity in the first place.
-    """
+    """Stashes hidden activations for the batch the gradient flows through, in every arm."""
 
     def __init__(self, network):
         self.layers = [module for module in network if isinstance(module, nn.Linear)]

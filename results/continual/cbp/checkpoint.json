@@ -1,0 +1,12 @@
+{
+  "signature": "891d1f5c20b0227b3059bc6684d6f2311dd74d1d753a04dae2439051c02a98d9",
+  "arm": "cbp",
+  "seed": 0,
+  "blocks": [
+    "default",
+    "gravity",
+    "pole",
+    "force"
+  ],
+  "model": "model.pt"
+}

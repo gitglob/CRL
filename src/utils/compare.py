@@ -12,7 +12,7 @@ import matplotlib.pyplot as plt
 from matplotlib.ticker import PercentFormatter, StrMethodFormatter
 import numpy as np
 
-from .config import load_config
+from .config import load_config, run_directory
 from .io import save_json
 from .metrics import area_under_curve, average_performance, bootstrap, forgetting, forward_transfer, zero_shot
 
@@ -36,7 +36,7 @@ def load_runs(root, config):
         for arm in config["benchmark"]["arms"]:
             targets = [(arm, task) for task in config["benchmark"]["order"]] if arm == "scratch" else [(arm, None)]
             for name, task in targets:
-                path = Path(root) / name / (task or "") / f"seed{seed}" / "metrics.json"
+                path = run_directory(root, name, task) / "metrics.json"
                 if path.exists():
                     runs.append({"arm": name, "seed": seed, "task": task, **json.loads(path.read_text())})
                 else:
@@ -229,8 +229,7 @@ def plasticity_figure(root, runs, config):
             selected = [run for run in runs if run["arm"] == arm]
             if not selected:
                 continue
-            # The diagnostic recorded before the first gradient step has no activations yet,
-            # so drop missing points rather than the whole run.
+            # The diagnostic before the first gradient step has none, so drop points not runs.
             series = [{point["env_steps"]: point[key] for point in run["plasticity"] if point.get(key) is not None} for run in selected]
             series = [entry for entry in series if entry]
             if not series:

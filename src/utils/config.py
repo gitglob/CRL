@@ -72,14 +72,17 @@ def validate(c):
         if missing:
             raise ValueError(f"Task {name} is missing physics parameters: {missing}")
     seeds = c["benchmark"]["seeds"]
-    # FourRooms_v0 allows a single seed per study; a continual comparison needs several.
-    if not seeds or len(set(seeds)) != len(seeds):
-        raise ValueError("benchmark.seeds must be a non-empty list of distinct integers")
+    # Exactly one: run directories no longer carry the seed, so a second would overwrite it.
+    if len(seeds) != 1:
+        raise ValueError("benchmark.seeds must hold exactly one seed")
     if c["benchmark"]["cycles"] < 1:
         raise ValueError("benchmark.cycles must be at least one")
-    for section, key in [("train", "timesteps"), ("train", "batch_size"), ("train", "buffer_capacity"), ("train", "train_every"), ("env", "max_steps"), ("eval", "every"), ("eval", "episodes"), ("eval", "matrix_episodes"), ("replay", "capacity")]:
+    for section, key in [("train", "timesteps"), ("train", "batch_size"), ("train", "buffer_capacity"), ("train", "train_every"), ("train", "num_envs"), ("env", "max_steps"), ("eval", "every"), ("eval", "episodes"), ("eval", "matrix_episodes"), ("replay", "capacity")]:
         if c[section][key] <= 0:
             raise ValueError(f"{section}.{key} must be positive")
+    # block_steps strides by num_envs, so anything it does not divide drifts off the eval grid.
+    if c["eval"]["every"] % c["train"]["num_envs"] or c["train"]["timesteps"] % c["train"]["num_envs"]:
+        raise ValueError("train.num_envs must divide both train.timesteps and eval.every")
     if c["train"]["learning_starts"] < 0 or c["train"]["learning_starts"] >= c["train"]["timesteps"]:
         raise ValueError("train.learning_starts must be nonnegative and smaller than the budget")
     if not 0 < c["train"]["gamma"] <= 1:
@@ -96,8 +99,8 @@ def validate(c):
         raise ValueError("Invalid epsilon schedule")
     if not 0 < c["train"]["epsilon_decay_fraction"] <= 1:
         raise ValueError("Invalid epsilon decay fraction")
-    if c["train"]["device"] not in ("auto", "cpu", "cuda") and not (c["train"]["device"].startswith("cuda:") and c["train"]["device"][5:].isdigit()):
-        raise ValueError("train.device must be auto, cpu or a cuda device")
+    if c["train"]["device"] not in ("auto", "cuda") and not (c["train"]["device"].startswith("cuda:") and c["train"]["device"][5:].isdigit()):
+        raise ValueError("train.device must be auto or a cuda device; the CPU is not an option")
     if not 0 <= c["replay"]["ratio"] < 1:
         raise ValueError("replay.ratio must be in [0, 1)")
     if not 0 <= c["cbp"]["replacement_rate"] < 1:
@@ -115,6 +118,7 @@ def task_order(config):
     return list(config["benchmark"]["order"]) * config["benchmark"]["cycles"]
 
 
-def run_directory(root, arm, seed, task=None):
+def run_directory(root, arm, task=None):
+    """One seed per study, so the seed is not part of the path."""
     root = Path(root)
-    return root / arm / task / f"seed{seed}" if task is not None else root / arm / f"seed{seed}"
+    return root / arm / task if task is not None else root / arm

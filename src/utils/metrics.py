@@ -4,11 +4,7 @@ import numpy as np
 
 
 def area_under_curve(curve, block):
-    """Riemann average of the normalized greedy evaluations recorded during one block.
-
-    The warmup is deliberately included: evaluation is greedy, so the epsilon ramp cannot
-    corrupt it, and the early points are exactly where forward transfer shows itself.
-    """
+    """Riemann average of one block's greedy evaluations, warmup included: FT shows there."""
     points = [row["normalized"] for row in curve if row["block"] == block]
     return float(np.mean(points)) if points else None
 
@@ -22,15 +18,10 @@ def average_performance(matrix, order):
 
 
 def forgetting(matrix, order):
-    """F_i is the drop from the score right after learning task i to the score at the end.
-
-    F_{N-1} is identically zero because the last block ends the sequence, so the mean over
-    all N tasks structurally understates forgetting; both means are reported.
-    """
+    """F_i drops from the score just after learning task i to the final one; F_{N-1} is always 0."""
     after = {}
     for row in matrix:
-        # The multitask arm's single block is not one of the evaluated tasks, so it has no
-        # "score right after learning task i" and forgetting is undefined for it.
+        # The multitask arm's single block is not an evaluated task, so forgetting is undefined.
         if row["block"] is not None and row["task"] in row["evaluations"]:
             after[row["task"]] = row["evaluations"][row["task"]]["normalized"]
     final = final_row(matrix)
@@ -40,12 +31,7 @@ def forgetting(matrix, order):
 
 
 def forward_transfer(auc, scratch_auc, order):
-    """FT_i against a fresh agent's area under the same learning curve.
-
-    The ratio is formed against the seed-mean of the scratch AUC so one unlucky baseline
-    seed cannot explode a single FT, and the raw difference is reported alongside because
-    1 - AUC_scratch differs per task and therefore weights the tasks unequally.
-    """
+    """FT_i against a fresh agent's AUC; the raw difference rides along since 1 - AUC varies."""
     per_task, deltas = {}, {}
     for task in order:
         mine, base = auc.get(task), scratch_auc.get(task)
@@ -59,11 +45,7 @@ def forward_transfer(auc, scratch_auc, order):
 
 
 def zero_shot(jumpstart, order):
-    """How well the agent does on a task the instant before it starts learning it.
-
-    Task 1 is excluded from the mean: nothing has been learned yet, so its jumpstart only
-    measures a freshly initialised network.
-    """
+    """Score on a task the instant before learning it; task 1 is excluded as nothing precedes it."""
     scores = {}
     for row in jumpstart:
         scores.setdefault(row["task"], row["normalized"])

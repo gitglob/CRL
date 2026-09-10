@@ -16,9 +16,9 @@ def jobs(config, root, overwrite):
         for arm in config["benchmark"]["arms"]:
             if arm == "scratch":
                 for task in config["benchmark"]["order"]:
-                    planned.append({"arm": arm, "seed": seed, "task": task, "out": str(run_directory(root, arm, seed, task)), "overwrite": overwrite})
+                    planned.append({"arm": arm, "seed": seed, "task": task, "out": str(run_directory(root, arm, task)), "overwrite": overwrite})
             else:
-                planned.append({"arm": arm, "seed": seed, "task": None, "out": str(run_directory(root, arm, seed)), "overwrite": overwrite})
+                planned.append({"arm": arm, "seed": seed, "task": None, "out": str(run_directory(root, arm)), "overwrite": overwrite})
     return planned
 
 
