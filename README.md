@@ -1,149 +1,113 @@
-# Continual RL: CLEAR, continual backpropagation, and their combination
+# Continual RL: CLEAR and continual backpropagation
 
-This mini-project compares **fine-tuning**, **CBP**, **CLEAR**, and **CLEAR + CBP** on the same
-actor–critic architecture. **Replay without cloning** separates CLEAR's replay and cloning
-components. Scratch and joint-training pilots qualify the task suite.
+This project compares **fine-tuning**, **CBP**, **CLEAR**, **CLEAR + CBP**, and **replay without
+cloning** using one common actor–critic implementation and seed 0.
 
-The experiment uses **one seed (0)** and a **one-hour maximum**, including profiling, pilots,
-training, isolated learning probes, evaluation, and reporting. It starts with contextual
-CartPole and switches to MinAtar if CartPole does not demonstrate the required failure modes.
+The current [report](results/REPORT.md) is **inconclusive**: both benchmark suites failed
+qualification. All five arms completed 60 MinAtar blocks (1,966,080 transitions each) in a
+20.8-minute RTX 3090 experiment, and their checkpoints passed re-evaluation. This validates the
+pipeline's execution, but does not establish the intended combined benefit.
 
-The generated [showcase report](results/showcase/REPORT.md) is the source of results. A failed
-qualification gate is reported as **inconclusive**, even when all training jobs finish.
+## Repository layout
 
-The completed seed-0 run took **20.8 minutes** on the RTX 3090. All five arms finished 60 MinAtar
-blocks (1,966,080 transitions each), and all checkpoints passed re-evaluation. Both task suites
-failed qualification: the fresh Asterix reference barely learned, and CLEAR+CBP failed to acquire
-Freeway. The implementation is exercised, but the intended combined benefit is **not established**.
+- `src/clear/`: actor–critic learning, V-trace, CLEAR cloning, and reservoir replay.
+- `src/cbp/`: continual backpropagation, optimizer resets, and feature diagnostics.
+- `src/utils/`: environments, configuration, study execution, evaluation, and reporting.
+- `config/study.yaml`: the full experiment, capped at one hour.
+- `config/smoke.yaml`: a short pipeline check, writing only under `tmp/`.
+- `tests/`: numerical, algorithm, and pipeline regression tests.
+- `results/`: the single current study: report, figures, configuration, summary, audit, and
+  one directory per arm containing metrics, configuration, final checkpoint, and videos.
+- `tmp/`: ignored smoke runs, qualification pilots, throughput profiling, intermediate
+  checkpoints, source snapshots, caches, and archived output from `--overwrite`.
 
-## Run
+There is no separate `continual` or `showcase` result directory. The old DQN implementation,
+its configs, tests, documentation, and results have been removed; Git history retains them.
+“Preflight” meant an old DQN qualification check. “Smoke” means a tiny execution check, never
+an official result. The current study's qualification outcomes are included in `results/summary.json`.
 
-Use the repository virtual environment and a working CUDA device:
+## Install and run
+
+Use Python 3.10+ and the repository virtual environment. All dependencies, including the
+CUDA 13.0 PyTorch build used on the RTX 3090, are pinned in one file:
 
 ```bash
-.venv/bin/python -m pip install -r requirements-showcase.txt
-.venv/bin/python -m pip install -r requirements-nn.txt
+python3 -m venv .venv
+.venv/bin/python -m pip install -r requirements.txt
 .venv/bin/python -m pytest -q
-.venv/bin/python -m src.study --config config/showcase_smoke.yaml
-.venv/bin/python -m src.study
+.venv/bin/python -m src.study --config config/smoke.yaml
 ```
 
-The default uses [config/showcase.yaml](config/showcase.yaml). Examples:
+Run the full experiment with `.venv/bin/python -m src.study`. Existing results require
+`--overwrite`, which archives them under `tmp/` before starting. Exploratory runs belong in `tmp/`:
 
 ```bash
-.venv/bin/python -m src.study --suite cartpole --out results/cartpole_demo
-.venv/bin/python -m src.study --suite minatar --max-seconds 1800 --out results/minatar_demo
-.venv/bin/python -m src.study --workers 4 --out results/four_workers
-.venv/bin/python -m src.study --arm scratch --out results/scratch_references
-.venv/bin/python -m src.study --arm multitask --out results/joint_reference
+.venv/bin/python -m src.study --suite cartpole --out tmp/cartpole
+.venv/bin/python -m src.study --suite minatar --max-seconds 1800 --out tmp/minatar
+.venv/bin/python -m src.study --arm scratch --out tmp/scratch
+.venv/bin/python -m src.study --arm multitask --out tmp/joint
+.venv/bin/python -m src.compare                       # regenerate the current report
+.venv/bin/python -m src.compare --out tmp/minatar     # regenerate an exploratory report
 ```
 
-`--workers` fixes concurrency; otherwise a short 1/2/4-worker throughput and memory profile chooses
-it. Learner batches and updates per transition remain fixed. CUDA can be hidden by an execution
-sandbox even when the host has a GPU; run with host GPU access in that case.
-
-`--arm` restricts the main comparison. Pilots still qualify the suite. `--overwrite` archives an
-existing output directory before starting a fresh experiment. No external logging is enabled.
-Public showcase runs use CUDA; numerical unit tests also exercise CPU tensors.
-Scratch trains a separate fresh learner for one block per task. Joint training balances the tasks
-within each rollout and receives the same total transition budget as a sequential run. These two
-reference modes run separately from the five-arm comparison.
+Report regeneration uses saved metrics and audits; it performs no training or evaluation.
+`--workers 1|2|4` fixes concurrency; otherwise a short throughput and memory profile selects it.
+Learner batch size and updates per transition remain fixed. Real runs use CUDA; numerical tests
+also work on CPU. An execution sandbox may hide CUDA even when the host GPU works.
 
 ## Algorithms
 
-Actor and critic are separate MLPs with two 256-unit ReLU hidden layers. Every arm starts with
-identical weights and uses the same AdamCBP optimizer, learning rate, rollout length, and learner
-batch size. There is no DQN target network in the showcase.
+Actor and critic are separate MLPs with two 256-unit ReLU layers. Every arm receives identical
+initial weights, architecture, optimizer settings, environment exposure, and learner update budgets.
+Defaults are γ=0.99, learning rate 0.0003, gradient clipping at 1, 16-step unrolls, and 256-transition
+learner batches. Adam uses elementwise counters so CBP can reset bias correction for replaced units.
 
-**CLEAR** implements [Experience Replay for Continual Learning](https://arxiv.org/pdf/1811.11682):
+**CLEAR**, from [Experience Replay for Continual Learning](https://arxiv.org/pdf/1811.11682), uses:
 
-- V-trace actor–critic updates on a 50/50 mixture of fresh and replayed unrolls.
-- A global, task-agnostic reservoir of at most 100,000 transitions, stored as complete unrolls.
-- Stored behavior logits and values, observations, actions, rewards, and episode boundaries.
-- Policy cloning using `KL(behavior || current)` and historical-value cloning on replay only.
+- V-trace actor–critic updates on 50% fresh and 50% replayed unrolls.
+- A global reservoir capped at 100,000 transitions, with no task labels or boundary callbacks.
+- Frozen behavior logits and values, actions, rewards, observations, and episode boundaries.
+- `KL(behavior || current)` policy cloning and historical-value cloning on replay only.
 
-Loss weights are 1 for policy gradient, 0.5 for value regression, 0.005 for entropy, 0.01 for policy
-cloning, and 0.005 for value cloning. Terms are averaged over the complete learner batch, with zero
-cloning loss on fresh samples. Truncations bootstrap from true final observations; termination
-stops bootstrapping, and both kinds of episode boundary stop trace propagation.
+Policy-gradient, value, entropy, policy-cloning, and value-cloning weights are respectively
+1, 0.5, 0.005, 0.01, and 0.005. Losses average over the complete learner batch, with zero cloning
+on fresh samples. The replay ablation disables cloning. Termination disables bootstrap;
+truncation bootstraps from the true final observation. Both stop trace propagation across resets.
 
-**CBP** follows [Loss of plasticity in deep continual learning](https://www.nature.com/articles/s41586-024-07711-7)
-and the [authors' implementation](https://github.com/shibhansh/loss-of-plasticity). It tracks
-contribution utility in both actor and critic, selects low-utility mature units, reinitializes
-incoming weights, and zeros outgoing connections. All layers are selected before any are changed.
-Replacement resets Adam moments and elementwise bias-correction counters.
+**CBP**, from [Loss of plasticity in deep continual learning](https://www.nature.com/articles/s41586-024-07711-7),
+uses contribution utility from the [authors' RL implementation](https://github.com/shibhansh/loss-of-plasticity).
+It selects low-utility mature units in all hidden layers before changing any weights. Replacement
+resets incoming weights, zeros outgoing columns last, and clears affected optimizer moments and
+counters. Both actor and critic receive CBP. Bias compensation preserves the next preactivation
+at the old feature mean, rather than every output for arbitrary inputs.
 
-Miniature-study defaults are replacement rate 0.0001, maturity 1,000 **optimizer updates**, and
-decay 0.99. No arm uses weight decay. These differ from the paper's Ant/PPO configuration. The
-replacement initializer matches the network's initial fan-in bound. Bias compensation preserves
-the next preactivation at the old feature mean, not every output for arbitrary inputs.
-
-**CLEAR + CBP** applies CBP after CLEAR's gradient update. They are compatible mechanisms, but
-whether their combination helps is an empirical question.
+Miniature-experiment defaults are replacement rate 0.0001, maturity 1,000 optimizer updates, and
+decay 0.99. These differ from the paper's full Ant/PPO configuration. No arm uses weight decay.
+CLEAR + CBP applies replacement after CLEAR's gradient update; any combined benefit must be measured.
 
 ## Tasks and measurements
 
-CartPole keeps standard physics. Four tasks cross normal/reversed actions with identity/swapped
-observation coordinates. The observation includes the permutation matrix and actuator direction:
-this is an explicitly **contextual synthetic benchmark**, not a hidden-context control problem.
-Four held-out tasks use two further permutations and both actuator directions.
+The experiment starts with standard-physics CartPole. Four recurring tasks cross normal/reversed
+actions with identity/swapped observation coordinates. The observation includes the permutation
+matrix and actuator direction, making this a contextual synthetic benchmark. Four held-out probes
+use two further permutations, each with both action mappings.
 
-MinAtar cycles **Breakout → Space Invaders → Freeway**, with **Asterix** held out for probes.
-All games expose six actions and a flattened 10×10×10 binary observation; unused channels are
-zero-padded. An external 2,500-step limit truncates episodes; genuine game endings are terminal.
+If CartPole fails qualification, the automatic fallback cycles MinAtar **Breakout → Space Invaders
+→ Freeway**, reserving **Asterix** for probes. All games use six actions and flattened 10×10×10
+binary observations with padded channels. An external 2,500-step limit truncates episodes.
 
-Every recurring task is evaluated after every block. Reports retain all revisit curves and each
-performance drop relative to that task's preceding learning block. AUC uses trapezoidal integration
-over actual step coordinates.
+Every recurring task is evaluated after every block. Reports retain all revisit curves, actual-step
+AUCs, pre-revisit retention, and losses since the task's preceding learning block. At initialization,
+midpoint, and completion, isolated learners copy each main arm's weights, reset the optimizer,
+and train fresh-only on held-out tasks. Initial probes are the paired scratch reference because
+initial weights and random streams are identical. Probes never alter the main learner.
 
-Plasticity is tested at initialization, midpoint, and completion by copying weights into isolated
-fresh-only learners. Probes reset optimizer state and disable CLEAR and CBP. The main learner and
-its random streams remain unchanged. Initial probes are the paired scratch reference because all
-arms start identically. These probes assess parameter adaptability, not optimizer aging.
+Diagnostics use fixed observations and true stable rank on centered activations:
+`sum(singular_values**2) / max(singular_values**2)`. The old formula is named
+`singular_value_participation_ratio`.
 
-Diagnostics use fixed observations. True stable rank is
-`sum(singular_values**2) / max(singular_values**2)` on centered activations. The previous formula
-is retained under `singular_value_participation_ratio`.
-
-The CartPole gate requires scratch and joint returns ≥400 on every task, retention drops ≥100
-on two tasks, and late-probe normalized AUC deficits ≥0.10 on two held-out tasks. MinAtar uses
-random/scratch-relative gates documented in the report. These are demonstration thresholds, not
-significance tests. No confidence intervals or statistical rankings are reported.
-MinAtar probe deficits are distinguished from plasticity-loss evidence when the fresh reference
-fails the above-random learning check.
-
-## Artifacts and code
-
-Each study saves resolved configs, a source archive and hash, versions, GPU/profile measurements,
-qualification results, per-block metrics, full final checkpoints, and weights at every completed
-block. Interrupted studies compare the common completed-block prefix. Checkpoints are re-evaluated.
-
-Reports include learning curves, retention, performance matrices, fixed-input diagnostics, isolated
-probe curves, and deterministic gameplay clips. Incomplete phases retain their incomplete status.
-
-Regenerate figures and interpretation from saved data, without training or checkpoint evaluation:
-
-```bash
-.venv/bin/python -m src.showcase.reanalyze results/showcase
-```
-
-This preserves the original report and qualification, reuses recorded audits, and records analysis
-source hashes separately from the timed run's source archive. The report identifies later revisions.
-
-The pipeline is in [src/showcase](src/showcase), shared CBP is in [src/cbp.py](src/cbp.py), and the
-new numerical and integration tests are in [tests/test_showcase.py](tests/test_showcase.py).
-
-## Why the original results were misleading
-
-The historical [DQN report](results/continual/REPORT.md) and its artifacts are preserved. Its replay
-arm was not CLEAR. Replay+CBP predicted Q-values near 2.5 million, although +1 rewards and γ=0.99
-bound true discounted returns at 100. Some scratch policies collapsed after perfect returns.
-This establishes instability, not evidence against CLEAR or CBP's ability to maintain plasticity.
-
-CBP had an adjacent-layer replacement bug, the rank diagnostic was mislabeled, and later-visit
-AUCs were discarded. The task suite and preflight did not establish plasticity loss. The exact
-cause of DQN divergence was not isolated; the new pipeline removes its target-network interaction.
-
-The [original README](docs/legacy_dqn.md) retains historical documentation and its superseded
-interpretation. Explicit old configs still run DQN, for example
-`python -m src.study --config config/smoke.yaml`; the default now runs the actor–critic showcase.
+CartPole qualification requires scratch and joint returns ≥400 on every task, retention drops
+≥100 on two tasks, and late-probe normalized AUC deficits ≥0.10 on two held-out tasks. MinAtar
+uses measured random/scratch references and the gates detailed in the report. Weak scratch probe
+learning cannot establish plasticity loss. These are demonstration thresholds, not significance
+tests; there are no confidence intervals or statistical rankings for this single seed.

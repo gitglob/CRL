@@ -1,9 +1,0 @@
-{
-  "signature": "ac927afbecac2872bac1435492da25b1e2f4a6c799712b2f3d1687434199b888",
-  "arm": "scratch",
-  "seed": 0,
-  "blocks": [
-    "gravity"
-  ],
-  "model": "model.pt"
-}

@@ -1,16 +1,18 @@
-inherits: base.yaml
-benchmark:
-  seeds: [0]
+inherits: study.yaml
+output: tmp/smoke
+suite: auto
+max_seconds: 180
+workers: 2
+cycles: 1
+smoke: true
 train:
-  timesteps: 2000
-  learning_starts: 200
-  buffer_capacity: 5000
-  epsilon_decay_fraction: 0.5
-replay:
-  capacity: 1000
+  block_steps: 512
+  probe_steps: 256
+  hidden_sizes: [32, 32]
+cbp:
+  maturity_threshold: 0
+  replacement_rate: 0.05
 eval:
-  every: 500
-  episodes: 2
-  matrix_episodes: 3
-output:
-  root: results/smoke
+  episodes: 1
+  points_per_block: 2
+  fixed_observations: 32

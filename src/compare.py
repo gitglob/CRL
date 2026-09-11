@@ -1,4 +1,5 @@
-"""CLI entrypoint; implementation lives in src.utils.compare."""
+"""Command-line entry point for the continual RL compare."""
+
 from .utils.compare import main
 
 

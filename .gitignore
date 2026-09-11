@@ -1,13 +1,8 @@
 .venv/
 __pycache__/
 *.py[cod]
-.pytest_cache/
 *.pt
-wandb/
-results/smoke/
-results/showcase_smoke/
-results/showcase_smoke_previous_*/
-.mplconfig/
 *.egg-info/
 *.gif
-!results/showcase/videos/*/*.gif
+tmp/
+!results/*/videos/*.gif

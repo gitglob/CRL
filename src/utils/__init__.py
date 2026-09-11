@@ -1,1 +1,1 @@
-"""Environment, configuration, evaluation, metrics and reporting helpers."""
+"""Environment adapters, configuration, study execution, and reporting."""
