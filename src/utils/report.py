@@ -226,6 +226,40 @@ def clip(agent, task, path, deadline):
     return {"task": task, "path": str(path), "return": total, "steps": steps}
 
 
+def reference_runs(root, tasks):
+    """Scratch and joint baselines sit beside the compared arms without being part of the sweep."""
+    found = {}
+    for task in tasks:
+        run = read_run(root / "scratch" / task)
+        if run.get("matrix"):
+            found[f"scratch/{task}"] = {"arm": "scratch", "directory": root / "scratch" / task, "run": run, "clips": [task]}
+    joint = read_run(root / "multitask")
+    if joint.get("matrix"):
+        found["multitask"] = {"arm": "multitask", "directory": root / "multitask", "run": joint, "clips": list(tasks)}
+    return found
+
+
+def audit_references(references, config, suite, tasks, deadline, audit, clips):
+    """Re-evaluate and film each baseline checkpoint, as the compared arms already are."""
+    for name, entry in references.items():
+        row = entry["run"]["matrix"][-1]
+        try:
+            check_time(deadline)
+            agent = ActorCritic(config, suite, entry["arm"])
+            payload = torch.load(entry["directory"] / "model.pt", map_location=agent.device, weights_only=False)
+            agent.load_weights(payload["weights"])
+            actual = evaluate(agent, tasks, config["eval"]["episodes"], deadline)
+            match = all(abs(actual[task]["return"] - row["scores"][task]["return"]) < 1e-6 for task in tasks)
+            audit.append({"arm": name, "block": row["block"], "match": match, "scores": actual})
+            if config["eval"]["clips"]:
+                for task in entry["clips"]:
+                    if time.time() >= deadline - 10:
+                        break
+                    clips.append(clip(agent, task, entry["directory"] / "videos" / f"{task}.gif", deadline - 5))
+        except BudgetExpired:
+            audit.append({"arm": name, "status": "budget_exhausted"})
+
+
 def finalize_scratch(root, config, qualification, manifest, deadline, saved_artifacts=None):
     tasks = task_names(config["suite"])
     references = {}
@@ -316,11 +350,14 @@ def finalize(root, config, qualification, manifest, deadline, saved_artifacts=No
                     clips.append(clip(agent, task, root / arm / "videos" / f"{task}.gif", deadline - 5))
         except BudgetExpired:
             audit.append({"arm": arm, "status": "budget_exhausted"})
+    references = reference_runs(root, tasks)
+    if saved_artifacts is None:
+        audit_references(references, config, suite, tasks, deadline, audit, clips)
     if runs:
         figures(root, runs, suite, common)
     has_baseline = baseline_figure(root, suite)
     complete = set(runs) == set(config["arms"]) and all(run["status"] == "complete" for run in runs.values())
-    verified = len(audit) == len(runs) and bool(runs) and all(row.get("match") for row in audit)
+    verified = len(audit) == len(runs) + len(references) and bool(runs) and all(row.get("match") for row in audit)
     outcome = "qualified demonstration" if qualification["qualified"] and complete and verified else "inconclusive demonstration"
     save_csv(root / "retention.csv", ("arm", "block", "task", "since_block", "drop", "return"),
              [{"arm": arm, **drop} for arm, data in summary.items() for drop in data["retention_drops"]] + [{"arm": "pilot_finetune", **drop} for drop in qualification.get("retention_drops", [])])
@@ -351,7 +388,7 @@ def finalize(root, config, qualification, manifest, deadline, saved_artifacts=No
         lines.extend(["### Representative clips", ""])
         for item in clips:
             path = Path(item["path"])
-            lines.append(f"- [{path.parent.parent.name}: {item['task']}]({path.relative_to(root)}) — return {item['return']:.0f}.")
+            lines.append(f"- [{path.relative_to(root).parts[0]}: {item['task']}]({path.relative_to(root)}) — return {item['return']:.0f}.")
     if not any(run.get("probes") for run in runs.values()):
         lines = [line for line in lines if line != "![Probe curves](probe_curves.png)"]
     (root / "REPORT.md").write_text("\n".join(lines) + "\n")
