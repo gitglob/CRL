@@ -78,8 +78,6 @@ CartPole normalization is return / 500. MinAtar normalization is (return - rando
 
 ![Learning curves](learning_curves.png)
 
-![Performance matrix](performance_matrix.png)
-
 The initial probe is the paired scratch reference because every arm starts with the same seeded weights. Midpoint and final probes copy weights into new, isolated learners with fresh optimizers, fresh-only updates, and no replay or CBP. Their scores test the adaptability of the learned parameters; they do not alter the main run or test the accumulated optimizer state.
 
 ![Probe curves](probe_curves.png)
