@@ -30,8 +30,8 @@ def load_config(path="config/study.yaml", seen=()):
 def validate(config):
     if config["seed"] != 0:
         raise ValueError("The study uses exactly one seed: 0")
-    if config["suite"] not in ("auto", "cartpole", "minatar"):
-        raise ValueError("Unknown suite")
+    if config["suite"] != "minatar":
+        raise ValueError("The only suite is minatar")
     arms = config.get("arms", MAIN_ARMS)
     if not arms or len(set(arms)) != len(arms) or any(arm not in ARMS for arm in arms):
         raise ValueError("arms must be a nonempty list of unique supported arms")
@@ -63,7 +63,6 @@ def validate(config):
 def parser():
     result = argparse.ArgumentParser(description="Run the stability-plasticity study of CLEAR and CBP")
     result.add_argument("--config", default="config/study.yaml")
-    result.add_argument("--suite", choices=("auto", "cartpole", "minatar"))
     result.add_argument("--out", type=Path)
     result.add_argument("--workers", type=int, choices=(1, 2, 4))
     result.add_argument("--arm", choices=ARMS)
@@ -73,7 +72,7 @@ def parser():
 
 def resolve(args):
     config = deepcopy(load_config(args.config))
-    for name in ("suite", "workers"):
+    for name in ("workers",):
         if getattr(args, name, None) is not None:
             config[name] = getattr(args, name)
     if args.out:

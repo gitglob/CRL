@@ -74,17 +74,16 @@ Training visits one task at a time for `train.block_steps` environment steps, re
 sequence `cycles` times. Joint training covers all tasks at once with a proportionally longer
 block, and scratch trains each task alone; both receive the same per-task budget as the sequence.
 
-CartPole crosses normal/reversed actions with identity/swapped observation coordinates, giving
-four recurring tasks and four held-out probes; the observation includes the permutation matrix
-and actuator direction. If CartPole fails qualification, the fallback cycles MinAtar
-**Breakout → Space Invaders → Freeway**, reserving **Asterix** for probes, with six actions and
-flattened 10×10×10 binary observations. A 2,500-step limit truncates MinAtar episodes.
+The sequence cycles MinAtar **Breakout → Space Invaders → Freeway**, reserving **Asterix** for
+probes, with six actions and flattened 10×10×10 binary observations. A 2,500-step limit truncates
+episodes, and each block gives every environment more steps than that limit so episodes complete
+and their returns are logged.
 
 At initialization, midpoint, and completion, isolated learners copy each arm's weights, reset the
 optimizer, and train fresh-only on held-out tasks; probes never alter the main learner. Diagnostics
 use fixed observations and true stable rank, `sum(s**2) / max(s**2)`, on centered activations.
 
-CartPole qualification requires scratch and joint returns ≥400 on every task, retention drops ≥100
-on two tasks, and late-probe normalized AUC deficits ≥0.10 on two held-out tasks. MinAtar uses
-measured random and scratch references. These are demonstration thresholds, not significance
-tests; there are no confidence intervals or statistical rankings for a single seed.
+Qualification uses measured random and scratch references: scratch minus random must exceed
+max(1, 0.2 × random), joint must retain 80% of that, forgetting must reach 20% of it on two games,
+and the Asterix probe must show a 0.10 normalized AUC deficit. These are demonstration thresholds,
+not significance tests; there are no confidence intervals or statistical rankings for a single seed.

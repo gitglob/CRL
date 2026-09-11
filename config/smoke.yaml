@@ -1,6 +1,5 @@
 inherits: study.yaml
 output: tmp/smoke
-suite: auto
 workers: 2
 cycles: 1
 smoke: true

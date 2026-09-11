@@ -153,8 +153,8 @@ def test_disabled_interventions_are_exact_equivalences(config, left, right, chan
     else:
         config["clear"]["policy_cloning_weight"] = 0
         config["clear"]["value_cloning_weight"] = 0
-    agents = [ActorCritic(config, "cartpole", arm) for arm in (left, right)]
-    collectors = [Collector(agent, ["identity"]) for agent in agents]
+    agents = [ActorCritic(config, "minatar", arm) for arm in (left, right)]
+    collectors = [Collector(agent, ["breakout"]) for agent in agents]
     try:
         for _ in range(4):
             for agent, collector in zip(agents, collectors):
@@ -167,12 +167,12 @@ def test_disabled_interventions_are_exact_equivalences(config, left, right, chan
 
 
 def test_probe_training_and_diagnostics_leave_parent_unchanged(config):
-    agent = ActorCritic(config, "cartpole", "clear_cbp")
-    collector = Collector(agent, ["identity"])
+    agent = ActorCritic(config, "minatar", "clear_cbp")
+    collector = Collector(agent, ["breakout"])
     learn_rollout(agent, collector.collect(float("inf")))
     collector.close()
     before = deepcopy(agent.checkpoint())
-    fixed = fixed_observations("cartpole", 32)
+    fixed = fixed_observations("minatar", 32)
     first = agent.diagnostics(fixed)
     probe_tasks(agent, time.time() + 20, "test")
     second = agent.diagnostics(fixed)
@@ -184,27 +184,18 @@ def test_probe_training_and_diagnostics_leave_parent_unchanged(config):
     assert torch.equal(agent.action_rng.get_state(), before["action_rng"])
 
 
-@pytest.mark.parametrize("suite", ["cartpole", "minatar"])
-def test_task_interfaces_and_fixed_diagnostic_inputs(suite):
+def test_task_interfaces_and_fixed_diagnostic_inputs():
+    suite = "minatar"
     for task in task_names(suite) + task_names(suite, True):
         env = make_env(suite, task)
         state, _ = env.reset(seed=0)
-        assert state.shape == (21 if suite == "cartpole" else 1000,)
-        assert env.action_space.n == (2 if suite == "cartpole" else 6)
+        assert state.shape == (1000,) and env.action_space.n == 6
+        # Every game is padded to ten channels, so the tail channels stay empty.
+        channels = env.env.observation_space.shape[-1]
+        assert not state.reshape(10, 10, 10)[:, :, channels:].any()
         env.step(0)
         env.close()
     np.testing.assert_array_equal(fixed_observations(suite, 32), fixed_observations(suite, 32))
-
-
-def test_context_makes_reversed_actions_observably_distinct():
-    normal, reversed_env = make_env("cartpole", "identity"), make_env("cartpole", "identity_reverse")
-    a, _ = normal.reset(seed=3)
-    b, _ = reversed_env.reset(seed=3)
-    np.testing.assert_array_equal(a[:4], b[:4])
-    assert a[-1] == 1 and b[-1] == -1
-    np.testing.assert_array_equal(normal.step(0)[0][:4], reversed_env.step(1)[0][:4])
-    normal.close()
-    reversed_env.close()
 
 
 def test_auc_integrates_irregular_coordinates():
@@ -222,7 +213,7 @@ def test_revisit_forgetting_uses_previous_learning_block():
 
 
 def test_incomplete_or_unlearnable_pilot_cannot_qualify():
-    report = qualification("cartpole", {}, {})
+    report = qualification("minatar", {}, {})
     assert not report["qualified"] and not report["learnable"]
 
 
@@ -236,8 +227,8 @@ def test_probe_deficit_requires_a_learned_fresh_reference(fresh_auc, late_auc, f
 
 
 def test_checkpoint_restores_behavior_optimizer_memory_and_cbp(config, tmp_path):
-    agent = ActorCritic(config, "cartpole", "clear_cbp")
-    collector = Collector(agent, ["identity"])
+    agent = ActorCritic(config, "minatar", "clear_cbp")
+    collector = Collector(agent, ["breakout"])
     batch = collector.collect(float("inf"))
     agent.optimize(batch)
     collector.close()
@@ -248,12 +239,12 @@ def test_checkpoint_restores_behavior_optimizer_memory_and_cbp(config, tmp_path)
     restored.optimize(batch)
     for first, second in zip(agent.parameters, restored.parameters):
         torch.testing.assert_close(first, second, rtol=0, atol=0)
-    states = fixed_observations("cartpole", 4)
+    states = fixed_observations("minatar", 4)
     np.testing.assert_array_equal(agent.act(states)[0], restored.act(states)[0])
 
 
 def test_complete_job_retains_all_revisit_curves_and_can_be_audited(config, tmp_path):
-    job = {"config": config, "suite": "cartpole", "arm": "clear_cbp", "blocks": ["identity", "identity_reverse", "identity"], "out": str(tmp_path), "deadline": time.time() + 30, "probes": True}
+    job = {"config": config, "suite": "minatar", "arm": "clear_cbp", "blocks": ["breakout", "space_invaders", "breakout"], "out": str(tmp_path), "deadline": time.time() + 30, "probes": True}
     result = run_job(job)
     assert result["status"] == "complete"
     from src.utils.io import read_run
@@ -263,11 +254,11 @@ def test_complete_job_retains_all_revisit_curves_and_can_be_audited(config, tmp_
     assert set(metrics["probes"]) == {"initial", "midpoint", "final"}
     agent, _ = load_agent(tmp_path / "model.pt", device="cpu")
     # Evaluation replays from the weights and the evaluation point, exactly as the audit does.
-    assert evaluate(agent, task_names("cartpole"), 1, moment=metrics["matrix"][-1]["steps"]) == metrics["matrix"][-1]["scores"]
+    assert evaluate(agent, task_names("minatar"), 1, moment=metrics["matrix"][-1]["steps"]) == metrics["matrix"][-1]["scores"]
 
 
 def test_expired_job_is_incomplete_and_never_claims_a_checkpoint(config, tmp_path):
-    result = run_job({"config": config, "suite": "cartpole", "arm": "finetune", "out": str(tmp_path), "deadline": time.time() - 1})
+    result = run_job({"config": config, "suite": "minatar", "arm": "finetune", "out": str(tmp_path), "deadline": time.time() - 1})
     assert result["status"] == "budget_exhausted" and result["completed_blocks"] == 0
     assert not (tmp_path / "model.pt").exists()
 
@@ -304,9 +295,9 @@ def test_main_run_keeps_intermediate_checkpoints_outside_results(config, tmp_pat
 
     root = tmp_path / "results"
     work = tmp_path / "work"
-    config.update(suite="cartpole", arms=["replay"], cycles=1, workspace=str(work))
+    config.update(suite="minatar", arms=["replay"], cycles=1, workspace=str(work))
     job = main_jobs(config, root, time.time() + 30)[0]
-    job["blocks"] = ["identity"]
+    job["blocks"] = ["breakout"]
     assert Path(job["out"]) == root / "replay"
     assert run_job(job)["status"] == "complete"
     assert (root / "replay" / "model.pt").exists()
@@ -319,9 +310,9 @@ def test_report_reanalysis_reuses_audits_without_instantiating_learners(config, 
     import json
     from src.utils.report import finalize
 
-    config["suite"] = "cartpole"
+    config["suite"] = "minatar"
     config["arms"] = ["finetune", "clear"]
-    scores = {task: {"return": 10, "episodes": [10]} for task in task_names("cartpole")}
+    scores = {task: {"return": 10, "episodes": [10]} for task in task_names("minatar")}
     for arm in config["arms"]:
         folder = tmp_path / arm
         folder.mkdir(parents=True)
@@ -334,8 +325,8 @@ def test_report_reanalysis_reuses_audits_without_instantiating_learners(config, 
     monkeypatch.setattr("src.utils.report.ActorCritic", forbidden)
     monkeypatch.setattr("src.utils.report.figures", lambda *args: None)
     saved = {"audit": [{"arm": arm, "match": True} for arm in config["arms"]], "clips": []}
-    manifest = {"suite": "cartpole", "gpu": "cpu", "workers": 1, "cycles": 1, "started_at": time.time(), "elapsed_seconds": 10, "source_sha256": "test"}
-    report = finalize(tmp_path, config, qualification("cartpole", {}, {}), manifest, time.time() - 1, saved_artifacts=saved)
+    manifest = {"suite": "minatar", "gpu": "cpu", "workers": 1, "cycles": 1, "started_at": time.time(), "elapsed_seconds": 10, "source_sha256": "test"}
+    report = finalize(tmp_path, config, qualification("minatar", {}, {}), manifest, time.time() - 1, saved_artifacts=saved)
     assert report["all_checkpoints_verified"] and set(report["arms"]) == set(config["arms"])
     from src.utils.compare import refresh
     from src.utils.io import save_config
@@ -361,7 +352,7 @@ def test_standalone_reference_pipeline_produces_audited_results(config, tmp_path
     from src.utils.report import finalize, finalize_scratch
     from src.utils.study import main_jobs
 
-    config["suite"] = "cartpole"
+    config["suite"] = "minatar"
     config["arms"] = [arm]
     config["cycles"] = 1
     deadline = time.time() + 30
@@ -369,30 +360,30 @@ def test_standalone_reference_pipeline_produces_audited_results(config, tmp_path
     for job in jobs:
         assert run_job(job)["status"] == "complete"
     finalizer = finalize_scratch if arm == "scratch" else finalize
-    manifest = {"suite": "cartpole", "gpu": "cpu", "workers": 1, "cycles": 1, "started_at": time.time(), "elapsed_seconds": 1}
-    report = finalizer(tmp_path, config, qualification("cartpole", {}, {}), manifest, deadline)
+    manifest = {"suite": "minatar", "gpu": "cpu", "workers": 1, "cycles": 1, "started_at": time.time(), "elapsed_seconds": 1}
+    report = finalizer(tmp_path, config, qualification("minatar", {}, {}), manifest, deadline)
     assert report["all_runs_complete"] and report["all_checkpoints_verified"]
     figure = "learning_curves.png" if arm == "scratch" else "performance.png"
     assert (tmp_path / "REPORT.md").exists() and (tmp_path / figure).exists()
     if arm == "scratch":
-        assert set(report["references"]) == set(task_names("cartpole"))
+        assert set(report["references"]) == set(task_names("minatar"))
     else:
-        assert report["arms"][arm]["compared_env_steps"] == 4 * config["train"]["block_steps"]
+        assert report["arms"][arm]["compared_env_steps"] == len(task_names("minatar")) * config["train"]["block_steps"]
 
 
 def test_collector_stores_truncated_final_observation_before_reset(config, monkeypatch):
     class AlwaysTruncated:
         def reset(self, **kwargs):
-            return np.full(21, -2, dtype=np.float32), {}
+            return np.full(1000, -2, dtype=np.float32), {}
 
         def step(self, action):
-            return np.full(21, 7, dtype=np.float32), 1.0, False, True, {}
+            return np.full(1000, 7, dtype=np.float32), 1.0, False, True, {}
 
         def close(self):
             pass
 
     monkeypatch.setattr("src.utils.runtime.make_env", lambda *args: AlwaysTruncated())
-    collector = Collector(ActorCritic(config, "cartpole", "finetune"), ["identity"])
+    collector = Collector(ActorCritic(config, "minatar", "finetune"), ["breakout"])
     batch = collector.collect(float("inf"))
     assert np.all(batch["observation"] == -2) and np.all(batch["next_observation"] == 7)
     assert batch["boundary"].all() and not batch["terminated"].any()
@@ -400,7 +391,7 @@ def test_collector_stores_truncated_final_observation_before_reset(config, monke
 
 
 def test_interrupted_probe_retains_partial_curve(config, monkeypatch):
-    agent = ActorCritic(config, "cartpole", "finetune")
+    agent = ActorCritic(config, "minatar", "finetune")
     calls = 0
     original = evaluate
 
@@ -415,6 +406,6 @@ def test_interrupted_probe_retains_partial_curve(config, monkeypatch):
     results = {}
     with pytest.raises(BudgetExpired):
         probe_tasks(agent, time.time() + 10, "interrupted", results)
-    partial = results[task_names("cartpole", True)[0]]
+    partial = results[task_names("minatar", True)[0]]
     assert partial["status"] == "incomplete" and partial["auc"] is None
     assert len(partial["curve"]) == 1 and partial["train_env_steps"] > 0

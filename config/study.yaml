@@ -1,6 +1,6 @@
 experiment: stability-plasticity
 seed: 0
-suite: auto
+suite: minatar
 output: results
 workers: auto
 arms: [finetune, cbp, replay, clear, clear_cbp]

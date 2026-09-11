@@ -53,11 +53,8 @@ def qualification(suite, runs, random_scores):
     completed = all(run.get("status") == "complete" for run in required)
     scratch_scores = {task: run["matrix"][-1]["scores"][task]["return"] for task, run in scratch.items() if run.get("matrix")}
     joint_scores = {task: joint["matrix"][-1]["scores"][task]["return"] for task in tasks} if joint.get("matrix") else {}
-    denominators = {task: 500.0 if suite == "cartpole" else scratch_scores.get(task, 0) - random_scores.get(task, {}).get("return", 0) for task in tasks}
-    if suite == "cartpole":
-        learnable = all(scratch_scores.get(task, 0) >= 400 and joint_scores.get(task, 0) >= 400 for task in tasks)
-    else:
-        learnable = all(denominators[task] > max(1, 0.2 * random_scores.get(task, {}).get("return", 0)) and joint_scores.get(task, 0) >= random_scores.get(task, {}).get("return", 0) + 0.8 * denominators[task] for task in tasks)
+    denominators = {task: scratch_scores.get(task, 0) - random_scores.get(task, {}).get("return", 0) for task in tasks}
+    learnable = all(denominators[task] > max(1, 0.2 * random_scores.get(task, {}).get("return", 0)) and joint_scores.get(task, 0) >= random_scores.get(task, {}).get("return", 0) + 0.8 * denominators[task] for task in tasks)
     drops = retention_drops(sequential.get("matrix", []))
     forgetting_tasks = [task for task in tasks if denominators[task] > 0 and max([row["drop"] for row in drops if row["task"] == task] or [0]) / denominators[task] >= 0.2]
     probes = sequential.get("probes", {})
@@ -67,11 +64,11 @@ def qualification(suite, runs, random_scores):
         late = probes.get("final", {}).get(task, {})
         baseline = fresh.get("auc")
         current = late.get("auc")
-        denominator = 500 if suite == "cartpole" else (fresh.get("curve", [{}])[-1].get("return", 0) - random_scores.get(task, {}).get("return", 0))
+        denominator = fresh.get("curve", [{}])[-1].get("return", 0) - random_scores.get(task, {}).get("return", 0)
         deficits[task] = (baseline - current) / denominator if baseline is not None and current is not None and denominator > 0 else None
-        probe_learnable[task] = suite == "cartpole" or denominator > max(1, 0.2 * random_scores.get(task, {}).get("return", 0))
+        probe_learnable[task] = denominator > max(1, 0.2 * random_scores.get(task, {}).get("return", 0))
     plasticity_tasks = [task for task, deficit in deficits.items() if deficit is not None and deficit >= 0.1]
-    required_probes = 2 if suite == "cartpole" else 1
+    required_probes = 1
     plasticity = len([task for task in plasticity_tasks if probe_learnable[task]]) >= required_probes
     return {"qualified": completed and learnable and len(forgetting_tasks) >= 2 and plasticity, "all_pilots_complete": completed, "learnable": learnable, "forgetting_demonstrated": len(forgetting_tasks) >= 2, "plasticity_loss_demonstrated": plasticity, "probe_auc_threshold_met": len(plasticity_tasks) >= required_probes, "probe_reference_learnable": probe_learnable, "scratch_returns": scratch_scores, "joint_returns": joint_scores, "random_scores": random_scores, "forgetting_tasks": forgetting_tasks, "probe_auc_deficits": deficits, "retention_drops": drops, "fresh_reference": "Initial weights equal the seeded scratch network; the initial probes are the paired scratch reference."}
 
@@ -107,7 +104,7 @@ def profile(config, root, deadline=None):
         short["eval"]["episodes"] = 1
         short["eval"]["period"] = 10 ** 9
         arms = ["finetune", "cbp", "clear", "clear_cbp"][:workers]
-        jobs = [{"config": short, "suite": "cartpole", "arm": arm, "blocks": ["identity"] * 10000, "out": str(root / "profile" / f"workers_{workers}" / arm), "deadline": phase_end, "quiet": True} for arm in arms]
+        jobs = [{"config": short, "suite": "minatar", "arm": arm, "blocks": ["breakout"] * 10000, "out": str(root / "profile" / f"workers_{workers}" / arm), "deadline": phase_end, "quiet": True} for arm in arms]
         began = time.time()
         outputs = run_jobs(jobs, workers)
         elapsed = time.time() - began
@@ -127,7 +124,7 @@ def pilot(config, suite, root, workers, deadline):
     tasks = task_names(suite)
     pilot_root = root / "pilot" / suite
     settings = deepcopy(config)
-    settings["cycles"] = min(config["cycles"], 4 if suite == "cartpole" else 2)
+    settings["cycles"] = min(config["cycles"], 2)
     job_list = []
     for task in tasks:
         job_list.append({"config": settings, "suite": suite, "arm": "scratch", "blocks": [task], "out": str(pilot_root / "scratch" / task), "deadline": deadline})
@@ -224,13 +221,9 @@ def study(config, overwrite=False):
     save_json(work / "profile.json", profiling)
     workers = profiling["selected_workers"]
     print(f"[study] selected {workers} concurrent runs", flush=True)
-    suite = "cartpole" if config["suite"] == "auto" else config["suite"]
+    suite = config["suite"]
     report, runs = pilot(config, suite, work, workers, deadline)
     manifest["qualification_history"][suite] = report
-    if config["suite"] == "auto" and not report["qualified"]:
-        suite = "minatar"
-        report, runs = pilot(config, suite, work, workers, deadline)
-        manifest["qualification_history"][suite] = report
     settings = deepcopy(config)
     settings["suite"] = suite
     save_config(root / "config.yaml", settings)

@@ -2,14 +2,14 @@
 
 Continual RL mini-project: CLEAR, CBP, CLEAR+CBP, fine-tuning, and replay without cloning.
 One actor-critic implementation, seed 0, and a study sized by `cycles` and `block_steps`.
-Start with contextual CartPole; fall back to MinAtar if qualification fails.
+MinAtar Breakout, Space Invaders and Freeway recur; Asterix is held out for probes.
 
 ## Layout
 
 - `src/clear/learner.py` — actor/critic MLPs, V-trace, cloning, diagnostics, checkpoint state.
 - `src/clear/replay.py` — bounded reservoir of whole unrolls and the fresh/replay batch mixer.
 - `src/cbp/` — `algorithm.py` replacement, `optimizer.py` elementwise Adam, `diagnostics.py` probes.
-- `src/utils/envs.py` — contextual CartPole, padded MinAtar, task names, fixed observations, seeds.
+- `src/utils/envs.py` — padded MinAtar, task names, fixed observations, seeds.
 - `src/utils/config.py` — inheritance, validation, CLI parser; `io.py` — atomic writes, CSV logs.
 - `src/utils/runtime.py` — collection, evaluation, probe training, and the per-arm `run_job`.
 - `src/utils/study.py` — profiling, pilots, qualification gates, job planning, run manifest.
