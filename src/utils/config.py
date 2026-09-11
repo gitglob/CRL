@@ -85,6 +85,3 @@ def resolve(args):
         config["arms"] = [args.arm]
     return validate(config)
 
-
-def save_config(path, config):
-    Path(path).write_text(yaml.safe_dump(config, sort_keys=False))

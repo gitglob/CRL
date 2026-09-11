@@ -335,7 +335,7 @@ def test_report_reanalysis_reuses_audits_without_instantiating_learners(config, 
     report = finalize(tmp_path, config, qualification("cartpole", {}, {}), manifest, time.time() - 1, saved_artifacts=saved)
     assert report["all_checkpoints_verified"] and set(report["arms"]) == set(config["arms"])
     from src.utils.compare import refresh
-    from src.utils.config import save_config
+    from src.utils.io import save_config
 
     config["workspace"] = str(tmp_path / "work")
     save_config(tmp_path / "config.yaml", config)
@@ -369,7 +369,8 @@ def test_standalone_reference_pipeline_produces_audited_results(config, tmp_path
     manifest = {"suite": "cartpole", "gpu": "cpu", "workers": 1, "max_seconds": 30, "started_at": time.time(), "elapsed_seconds": 1}
     report = finalizer(tmp_path, config, qualification("cartpole", {}, {}), manifest, deadline)
     assert report["all_runs_complete"] and report["all_checkpoints_verified"]
-    assert (tmp_path / "REPORT.md").exists() and (tmp_path / "learning_curves.png").exists()
+    figure = "learning_curves.png" if arm == "scratch" else "task_performance.png"
+    assert (tmp_path / "REPORT.md").exists() and (tmp_path / figure).exists()
     if arm == "scratch":
         assert set(report["references"]) == set(task_names("cartpole"))
     else:

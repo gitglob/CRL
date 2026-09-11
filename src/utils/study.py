@@ -11,8 +11,8 @@ from pathlib import Path
 import numpy as np
 import torch
 
-from .io import save_json, versions
-from .config import MAIN_ARMS, parser, resolve, save_config
+from .io import save_config, save_json, versions
+from .config import MAIN_ARMS, parser, resolve
 from .envs import task_names
 from ..clear.learner import ActorCritic
 from .runtime import BudgetExpired, evaluate, run_job

@@ -74,9 +74,9 @@ CartPole normalization is return / 500. MinAtar normalization is (return - rando
 
 ## Retention and fresh-task learning
 
-![Retention](retention.png)
+![Task performance](task_performance.png)
 
-![Learning curves](learning_curves.png)
+One panel per task. K counts the task blocks trained, so the policy plotted at K is the one after K * block_steps transitions, evaluated greedily on that panel's task whether or not it was the task just trained. A rise at a task's own block is acquisition; the dip before its next block is what the intervening tasks cost it.
 
 The initial probe is the paired scratch reference because every arm starts with the same seeded weights. Midpoint and final probes copy weights into new, isolated learners with fresh optimizers, fresh-only updates, and no replay or CBP. Their scores test the adaptability of the learned parameters; they do not alter the main run or test the accumulated optimizer state.
 
