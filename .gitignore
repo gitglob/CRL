@@ -6,3 +6,4 @@ __pycache__/
 *.gif
 tmp/
 !results/*/videos/*.gif
+!results/scratch/*/videos/*.gif
