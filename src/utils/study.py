@@ -11,7 +11,7 @@ from pathlib import Path
 import numpy as np
 import torch
 
-from .io import save_config, save_json, versions
+from .io import read_run, save_config, save_json, versions
 from .config import MAIN_ARMS, parser, resolve
 from .envs import task_names
 from ..clear.learner import ActorCritic
@@ -19,8 +19,7 @@ from .runtime import BudgetExpired, evaluate, run_job
 
 
 def read_metrics(path):
-    file = Path(path) / "metrics.json"
-    return json.loads(file.read_text()) if file.exists() else {}
+    return read_run(path)
 
 
 def run_jobs(jobs, workers):
@@ -100,7 +99,7 @@ def profile(config, root, deadline):
         short = deepcopy(config)
         short["train"]["block_steps"] = 2048 if not config["smoke"] else 256
         short["eval"]["episodes"] = 1
-        short["eval"]["points_per_block"] = 1
+        short["eval"]["period"] = 10 ** 9
         arms = ["finetune", "cbp", "clear", "clear_cbp"][:workers]
         jobs = [{"config": short, "suite": "cartpole", "arm": arm, "blocks": ["identity"] * 10000, "out": str(root / "profile" / f"workers_{workers}" / arm), "deadline": phase_end, "quiet": True} for arm in arms]
         began = time.time()
@@ -151,7 +150,9 @@ def choose_cycles(config, suite, workers, runs, seconds):
     if not block_costs:
         return 1
     block_cost = max(block_costs)
-    main_count = len(config.get("arms", MAIN_ARMS))
+    arms = config.get("arms", MAIN_ARMS)
+    # The scratch and joint baselines add about two arms' worth of blocks on top of the sweep.
+    main_count = len(arms) + (0 if set(arms) & {"scratch", "multitask"} else 2)
     batches = math_ceil_div(main_count, workers)
     probe_blocks = 2 * len(task_names(suite, probes=True)) * config["train"]["probe_steps"] / config["train"]["block_steps"]
     affordable = seconds * 0.55 / max(block_cost * batches, 1e-9) - probe_blocks
@@ -177,6 +178,18 @@ def main_jobs(settings, root, deadline, initial_probes=None):
         if arm == "multitask":
             job["block_steps"] = len(tasks) * settings["train"]["block_steps"]
         jobs.append(job)
+    return jobs + reference_jobs(settings, root, deadline)
+
+
+def reference_jobs(settings, root, deadline):
+    """Scratch and joint baselines at the per-task budget a sequential arm gives each task."""
+    if set(settings.get("arms", MAIN_ARMS)) & {"scratch", "multitask"}:
+        return []
+    suite = settings["suite"]
+    tasks = task_names(suite)
+    work = Path(settings.get("workspace", root / "work"))
+    jobs = [{"config": settings, "suite": suite, "arm": "scratch", "blocks": [task] * settings["cycles"], "out": str(root / "scratch" / task), "checkpoints": str(work / "checkpoints" / "scratch" / task), "deadline": deadline} for task in tasks]
+    jobs.append({"config": settings, "suite": suite, "arm": "multitask", "blocks": ["multitask"] * settings["cycles"], "block_steps": len(tasks) * settings["train"]["block_steps"], "out": str(root / "multitask"), "checkpoints": str(work / "checkpoints" / "multitask"), "deadline": deadline})
     return jobs
 
 

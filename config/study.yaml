@@ -32,8 +32,8 @@ cbp:
   decay_rate: 0.99
   dead_threshold: 0.025
 eval:
-  episodes: 5
-  points_per_block: 4
+  episodes: 1
+  period: 10000
   fixed_observations: 256
   clips: true
   clip_stride: 4

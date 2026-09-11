@@ -256,9 +256,9 @@ def test_complete_job_retains_all_revisit_curves_and_can_be_audited(config, tmp_
     job = {"config": config, "suite": "cartpole", "arm": "clear_cbp", "blocks": ["identity", "identity_reverse", "identity"], "out": str(tmp_path), "deadline": time.time() + 30, "probes": True}
     result = run_job(job)
     assert result["status"] == "complete"
-    import json
+    from src.utils.io import read_run
 
-    metrics = json.loads((tmp_path / "metrics.json").read_text())
+    metrics = read_run(tmp_path)
     assert len(metrics["curves"]) == 3 and metrics["completed_blocks"] == 3
     assert set(metrics["probes"]) == {"initial", "midpoint", "final"}
     agent, _ = load_agent(tmp_path / "model.pt", device="cpu")
@@ -369,7 +369,7 @@ def test_standalone_reference_pipeline_produces_audited_results(config, tmp_path
     manifest = {"suite": "cartpole", "gpu": "cpu", "workers": 1, "max_seconds": 30, "started_at": time.time(), "elapsed_seconds": 1}
     report = finalizer(tmp_path, config, qualification("cartpole", {}, {}), manifest, deadline)
     assert report["all_runs_complete"] and report["all_checkpoints_verified"]
-    figure = "learning_curves.png" if arm == "scratch" else "task_performance.png"
+    figure = "learning_curves.png" if arm == "scratch" else "performance.png"
     assert (tmp_path / "REPORT.md").exists() and (tmp_path / figure).exists()
     if arm == "scratch":
         assert set(report["references"]) == set(task_names("cartpole"))

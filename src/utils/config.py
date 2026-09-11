@@ -53,7 +53,7 @@ def validate(config):
         raise ValueError("Invalid learning settings")
     if config["cycles"] < 1 or config["eval"]["episodes"] < 1:
         raise ValueError("Cycles and evaluation episodes must be positive")
-    if any(config["eval"][key] < 1 for key in ("points_per_block", "fixed_observations", "clip_stride")):
+    if any(config["eval"][key] < 1 for key in ("period", "fixed_observations", "clip_stride")):
         raise ValueError("Evaluation intervals and observation counts must be positive")
     if not 0 <= config["cbp"]["replacement_rate"] < 1 or config["cbp"]["maturity_threshold"] < 0:
         raise ValueError("Invalid CBP settings")

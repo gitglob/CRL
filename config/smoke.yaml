@@ -14,5 +14,5 @@ cbp:
   replacement_rate: 0.05
 eval:
   episodes: 1
-  points_per_block: 2
+  period: 256
   fixed_observations: 32

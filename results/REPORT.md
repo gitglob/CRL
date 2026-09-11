@@ -2,19 +2,11 @@
 
 **Inconclusive demonstration.** Suite: **minatar**. One seed (0), 60 matched completed blocks. No confidence intervals or statistical ranking.
 
-The timed pipeline took **20.8 minutes** on NVIDIA GeForce RTX 3090, with 4 concurrent runs selected by profiling. Each compared arm received 1,966,080 main-training transitions. The configured maximum was 60 minutes; the run stopped after its planned cycles.
+The pipeline took **20.8 minutes** on NVIDIA GeForce RTX 3090, with 4 concurrent runs selected by profiling. Each compared arm received 1,966,080 main-training transitions, within a configured maximum of 60 minutes.
 
-CartPole failed qualification: learning gate **False**, forgetting gate **True**, plasticity-loss gate **False**. MinAtar also failed qualification. Completed training therefore provides implementation evidence and individual outcomes, without establishing the intended plasticity and stability benefits.
+CartPole did not qualify (learning **False**, forgetting **True**, plasticity loss **False**), so the fallback selected MinAtar.
 
-The pilot's raw probe-AUC threshold was crossed, but its fresh reference did not learn enough above random. That numerical threshold alone is not evidence of plasticity loss.
-
-The report was subsequently regenerated from saved metrics and existing checkpoint audits, with no additional training or evaluation. The weak-probe interpretation was corrected after the run; the original qualification decision was already inconclusive and is unchanged. Training provenance is recorded in summary.json. Supporting source snapshots and analysis records are kept in the temporary workspace.
-
-## What was wrong with the original study
-
-The old stability arm was DQN replay, not CLEAR. Replay+CBP's saved Q-values reached approximately 2.5 million despite a discounted-return ceiling of 100. Scratch policies also collapsed after learning. These results primarily exposed value-learning instability, not evidence against the two algorithms.
-
-CBP selected downstream units after changing upstream weights and could recreate zeroed outgoing connections. Replacement now uses one selection snapshot and zeros outgoing columns after all incoming resets. Diagnostics use fixed observations and true stable rank; learning curves retain every revisit and integrate over actual step coordinates.
+The raw probe-AUC threshold was crossed, but the fresh reference did not learn enough above random. That threshold alone is not evidence of plasticity loss.
 
 ## Benchmark qualification
 
@@ -43,6 +35,10 @@ MinAtar requires scratch minus random to exceed max(1, 0.2 × random), and joint
 | CLEAR | 5.6 | 34.4 | 13.0 | unavailable |
 | CLEAR + CBP | 5.6 | 37.4 | 0.0 | unavailable |
 
+![Baseline performance](baseline.png)
+
+One panel per baseline arm (scratch, joint training, fine-tuning; whichever have completed under this root), one line per task.
+
 Loss since each task's preceding learning block (positive means forgetting; the last trained task necessarily has zero loss at this checkpoint):
 
 | Arm | breakout | space_invaders | freeway |
@@ -52,8 +48,6 @@ Loss since each task's preceding learning block (positive means forgetting; the 
 | Replay without cloning | 0.2 | -14.0 | 0.0 |
 | CLEAR | 0.0 | 39.2 | 0.0 |
 | CLEAR + CBP | 0.0 | 26.2 | 0.0 |
-
-CLEAR+CBP's best measured Freeway return during learning was 2.2, versus 27.2 for fine-tuning. Its final return was 0.0. This indicates weak acquisition in this run; the endpoint alone should not be attributed to forgetting. The combination did not provide a consistent advantage across games. The replay ablation also prevents crediting replay gains automatically to CLEAR's cloning terms.
 
 Isolated held-out learning AUC (time-averaged raw return over the same probe budget):
 
@@ -65,8 +59,6 @@ Isolated held-out learning AUC (time-averaged raw return over the same probe bud
 | CLEAR + CBP / asterix | 0.500 | 0.625 | 0.400 |
 
 Low probe returns and rank changes do not independently establish loss of plasticity. A fresh learner must learn the probe within the allotted budget for an AUC deficit to be persuasive.
-
-The largest recorded learner-batch absolute value prediction was 15.95; the old million-scale divergence was not observed in these samples.
 CBP replaced 312 actor units and 312 critic units in total.
 CLEAR + CBP replaced 312 actor units and 312 critic units in total.
 
@@ -74,9 +66,9 @@ CartPole normalization is return / 500. MinAtar normalization is (return - rando
 
 ## Retention and fresh-task learning
 
-![Task performance](task_performance.png)
+![Performance](performance.png)
 
-One panel per task. K counts the task blocks trained, so the policy plotted at K is the one after K * block_steps transitions, evaluated greedily on that panel's task whether or not it was the task just trained. A rise at a task's own block is acquisition; the dip before its next block is what the intervening tasks cost it.
+One panel per task, plotted against cumulative environment steps. Every task is evaluated on the same fixed step grid (`eval.period`) plus each block boundary, so all tasks and arms share one clock: episode length differs by task, which would otherwise give each task a different axis. Each point is the mean return over `eval.episodes` greedy evaluation episodes. Solid stretches mark the blocks where that panel's task was being trained and dashed stretches the blocks where others were, but both are measured, not interpolated. A task's line begins at its first training block. A rise during a task's own block is acquisition; the drop across the following dashed span is what the intervening tasks cost it.
 
 The initial probe is the paired scratch reference because every arm starts with the same seeded weights. Midpoint and final probes copy weights into new, isolated learners with fresh optimizers, fresh-only updates, and no replay or CBP. Their scores test the adaptability of the learned parameters; they do not alter the main run or test the accumulated optimizer state.
 
@@ -98,7 +90,7 @@ All requested runs completed: **True**. All matched checkpoints re-evaluated cor
 
 Resolved configurations, phase deadlines, throughput, code revision, package versions, losses, replay use, replacement counts, checkpoints, and raw curves are saved alongside this report. The comparison uses the shared completed-block prefix if a deadline interrupted a run; probe checkpoints with different ages are flagged in summary.json.
 
-GPU scheduling uses measured throughput with reserved memory headroom. Timing, concurrency and qualification are recorded in summary.json. Pilot runs, profiling, intermediate checkpoints and source snapshots live under tmp/. The superseded DQN implementation and results have been removed; Git history preserves the earlier version.
+GPU scheduling uses measured throughput with reserved memory headroom. Timing, concurrency and qualification are recorded in summary.json. Pilot runs, profiling, intermediate checkpoints and source snapshots live under tmp/.
 
 ### Representative clips
 

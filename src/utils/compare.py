@@ -33,7 +33,7 @@ def refresh(root):
         backup = originals / f"{pilot.name}_qualification.json"
         if not backup.exists():
             shutil.copy2(path, backup)
-        runs = {str(file.parent.relative_to(pilot)): read_metrics(file.parent) for file in pilot.rglob("metrics.json")}
+        runs = {str(file.parent.relative_to(pilot)): read_metrics(file.parent) for file in sorted(pilot.rglob("run.json")) + sorted(pilot.rglob("metrics.json"))}
         current = qualification(pilot.name, runs, old["random_scores"])
         current["jobs"] = old.get("jobs", [])
         save_json(path, current)
@@ -42,7 +42,8 @@ def refresh(root):
             selected = current
     source_files = sorted(Path(__file__).resolve().parents[1].rglob("*.py"))
     source_hashes = {str(file): hashlib.sha256(file.read_bytes()).hexdigest() for file in source_files}
-    raw_files = sorted(root.rglob("metrics.json")) + sorted((work / "pilot").rglob("metrics.json"))
+    patterns = ("metrics.json", "run.json", "episodes.csv", "evaluations.csv", "blocks.csv", "diagnostics.csv", "probes.csv", "probe_summary.csv")
+    raw_files = sorted(file for base in (root, work / "pilot") for pattern in patterns for file in base.rglob(pattern))
     raw_hashes = {str(file): hashlib.sha256(file.read_bytes()).hexdigest() for file in raw_files}
     analysis = {"started_at": started, "training_source_sha256": manifest["source_sha256"], "analysis_source_hashes": source_hashes, "raw_metric_hashes": raw_hashes, "additional_training_steps": 0, "additional_evaluation_steps": 0, "checkpoint_audits_reused": True, "note": "Regenerated from saved data. Weak fresh-probe references cannot establish plasticity loss. Original qualification and report are retained in the temporary workspace. No training or evaluation is performed."}
     save_json(work / "analysis.json", analysis)
