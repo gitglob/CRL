@@ -262,7 +262,8 @@ def test_complete_job_retains_all_revisit_curves_and_can_be_audited(config, tmp_
     assert len(metrics["curves"]) == 3 and metrics["completed_blocks"] == 3
     assert set(metrics["probes"]) == {"initial", "midpoint", "final"}
     agent, _ = load_agent(tmp_path / "model.pt", device="cpu")
-    assert evaluate(agent, task_names("cartpole"), 1) == metrics["matrix"][-1]["scores"]
+    # Evaluation replays from the weights and the evaluation point, exactly as the audit does.
+    assert evaluate(agent, task_names("cartpole"), 1, moment=metrics["matrix"][-1]["steps"]) == metrics["matrix"][-1]["scores"]
 
 
 def test_expired_job_is_incomplete_and_never_claims_a_checkpoint(config, tmp_path):
@@ -271,12 +272,14 @@ def test_expired_job_is_incomplete_and_never_claims_a_checkpoint(config, tmp_pat
     assert not (tmp_path / "model.pt").exists()
 
 
-def test_new_configs_validate_and_limit_the_experiment_to_one_hour():
+def test_new_configs_validate_and_size_the_study_by_cycles_alone():
     for path in ("config/study.yaml", "config/smoke.yaml"):
-        validate(load_config(path))
+        config = validate(load_config(path))
+        # No clock: the study is exactly cycles x tasks x block_steps of training.
+        assert "max_seconds" not in config and config["cycles"] >= 1
     config = load_config("config/study.yaml")
-    config["max_seconds"] = 3601
-    with pytest.raises(ValueError, match="3600"):
+    config["cycles"] = 0
+    with pytest.raises(ValueError, match="Cycles"):
         validate(config)
 
 
@@ -331,7 +334,7 @@ def test_report_reanalysis_reuses_audits_without_instantiating_learners(config, 
     monkeypatch.setattr("src.utils.report.ActorCritic", forbidden)
     monkeypatch.setattr("src.utils.report.figures", lambda *args: None)
     saved = {"audit": [{"arm": arm, "match": True} for arm in config["arms"]], "clips": []}
-    manifest = {"suite": "cartpole", "gpu": "cpu", "workers": 1, "max_seconds": 180, "started_at": time.time(), "elapsed_seconds": 10, "source_sha256": "test"}
+    manifest = {"suite": "cartpole", "gpu": "cpu", "workers": 1, "cycles": 1, "started_at": time.time(), "elapsed_seconds": 10, "source_sha256": "test"}
     report = finalize(tmp_path, config, qualification("cartpole", {}, {}), manifest, time.time() - 1, saved_artifacts=saved)
     assert report["all_checkpoints_verified"] and set(report["arms"]) == set(config["arms"])
     from src.utils.compare import refresh
@@ -366,7 +369,7 @@ def test_standalone_reference_pipeline_produces_audited_results(config, tmp_path
     for job in jobs:
         assert run_job(job)["status"] == "complete"
     finalizer = finalize_scratch if arm == "scratch" else finalize
-    manifest = {"suite": "cartpole", "gpu": "cpu", "workers": 1, "max_seconds": 30, "started_at": time.time(), "elapsed_seconds": 1}
+    manifest = {"suite": "cartpole", "gpu": "cpu", "workers": 1, "cycles": 1, "started_at": time.time(), "elapsed_seconds": 1}
     report = finalizer(tmp_path, config, qualification("cartpole", {}, {}), manifest, deadline)
     assert report["all_runs_complete"] and report["all_checkpoints_verified"]
     figure = "learning_curves.png" if arm == "scratch" else "performance.png"

@@ -17,6 +17,9 @@ from .envs import task_names
 from ..clear.learner import ActorCritic
 from .runtime import BudgetExpired, evaluate, run_job
 
+PROFILE_SECONDS = 120
+SMOKE_PROFILE_SECONDS = 10
+
 
 def read_metrics(path):
     return read_run(path)
@@ -88,7 +91,10 @@ def retention_drops(matrix):
     return results
 
 
-def profile(config, root, deadline):
+def profile(config, root, deadline=None):
+    """Throughput is measured against the clock, so this phase alone carries a time box."""
+    budget = SMOKE_PROFILE_SECONDS if config["smoke"] else PROFILE_SECONDS
+    deadline = time.time() + budget if deadline is None else deadline
     measurements = []
     modes = [int(config["workers"])] if config["workers"] != "auto" else [1, 2, 4]
     for index, workers in enumerate(modes):
@@ -142,27 +148,6 @@ def pilot(config, suite, root, workers, deadline):
     return report, runs
 
 
-def choose_cycles(config, suite, workers, runs, seconds):
-    if config["smoke"]:
-        return 1
-    pilot_run = runs.get("finetune", {})
-    block_costs = [row["seconds"] for row in pilot_run.get("curves", [])]
-    if not block_costs:
-        return 1
-    block_cost = max(block_costs)
-    arms = config.get("arms", MAIN_ARMS)
-    # The scratch and joint baselines add about two arms' worth of blocks on top of the sweep.
-    main_count = len(arms) + (0 if set(arms) & {"scratch", "multitask"} else 2)
-    batches = math_ceil_div(main_count, workers)
-    probe_blocks = 2 * len(task_names(suite, probes=True)) * config["train"]["probe_steps"] / config["train"]["block_steps"]
-    affordable = seconds * 0.55 / max(block_cost * batches, 1e-9) - probe_blocks
-    return max(1, min(config["cycles"], int(affordable / len(task_names(suite)))))
-
-
-def math_ceil_div(count, divisor):
-    return (count + divisor - 1) // divisor
-
-
 def main_jobs(settings, root, deadline, initial_probes=None):
     suite = settings["suite"]
     tasks = task_names(suite)
@@ -197,7 +182,7 @@ def study(config, overwrite=False):
     from .report import finalize, finalize_scratch
 
     root = Path(config["output"])
-    work = Path("tmp") / ("showcase" if root.resolve() == Path("results").resolve() else root.name + "_work")
+    work = Path("tmp") / ("stability-plasticity" if root.resolve() == Path("results").resolve() else root.name + "_work")
     if root.exists() and any(root.iterdir()):
         if not overwrite:
             raise ValueError(f"Output already exists: {root}; select another --out or use --overwrite")
@@ -214,9 +199,8 @@ def study(config, overwrite=False):
     if config["device"].startswith("cuda") and not torch.cuda.is_available():
         raise RuntimeError("CUDA unavailable to this process; run with host GPU access")
     started = time.time()
-    deadline = started + config["max_seconds"]
-    scale = config["max_seconds"] / 3600
-    reserve = max(15, 300 * scale)
+    # No clock bounds the study: cycles and block_steps alone decide how much work it does.
+    deadline = float("inf")
     try:
         revision = subprocess.check_output(["git", "rev-parse", "HEAD"], text=True).strip()
         dirty = bool(subprocess.check_output(["git", "status", "--porcelain"], text=True).strip())
@@ -234,38 +218,31 @@ def study(config, overwrite=False):
     import importlib.metadata
 
     recorded_versions["minatar"] = importlib.metadata.version("minatar")
-    manifest = {"schema": 1, "started_at": started, "deadline": deadline, "max_seconds": config["max_seconds"], "seed": 0, "git_revision": revision, "working_tree_dirty": dirty, "source_sha256": digest.hexdigest(), "versions": recorded_versions, "gpu": torch.cuda.get_device_name() if torch.cuda.is_available() else "cpu", "status": "running", "workspace": str(work), "qualification_history": {}}
+    manifest = {"schema": 1, "started_at": started, "seed": 0, "git_revision": revision, "working_tree_dirty": dirty, "source_sha256": digest.hexdigest(), "versions": recorded_versions, "gpu": torch.cuda.get_device_name() if torch.cuda.is_available() else "cpu", "status": "running", "workspace": str(work), "qualification_history": {}}
     save_json(work / "manifest.json", manifest)
-    profiling = profile(config, work, min(deadline - reserve, started + max(10, 120 * scale)))
+    profiling = profile(config, work)
     save_json(work / "profile.json", profiling)
     workers = profiling["selected_workers"]
     print(f"[study] selected {workers} concurrent runs", flush=True)
     suite = "cartpole" if config["suite"] == "auto" else config["suite"]
-    report, runs = pilot(config, suite, work, workers, min(deadline - reserve, time.time() + max(20, (720 if suite == "cartpole" else 360) * scale)))
+    report, runs = pilot(config, suite, work, workers, deadline)
     manifest["qualification_history"][suite] = report
-    if config["suite"] == "auto" and not report["qualified"] and time.time() < deadline - reserve - 10:
+    if config["suite"] == "auto" and not report["qualified"]:
         suite = "minatar"
-        report, runs = pilot(config, suite, work, workers, min(deadline - reserve, time.time() + max(20, 360 * scale)))
+        report, runs = pilot(config, suite, work, workers, deadline)
         manifest["qualification_history"][suite] = report
-    main_end = deadline - reserve
     settings = deepcopy(config)
     settings["suite"] = suite
-    settings["cycles"] = choose_cycles(config, suite, workers, runs, max(0, main_end - time.time()))
     save_config(root / "config.yaml", settings)
     initial_probes = runs.get("finetune", {}).get("probes", {}).get("initial")
-    jobs = []
-    if time.time() < main_end:
-        jobs = main_jobs(settings, root, main_end, initial_probes)
-        manifest["main_jobs"] = run_jobs(jobs, workers)
-    else:
-        manifest["main_jobs"] = []
-    manifest.update({"suite": suite, "qualified": report["qualified"], "selected_cycles": settings["cycles"], "workers": workers})
+    jobs = main_jobs(settings, root, deadline, initial_probes)
+    manifest["main_jobs"] = run_jobs(jobs, workers)
+    manifest.update({"suite": suite, "qualified": report["qualified"], "cycles": settings["cycles"], "workers": workers})
     save_json(work / "manifest.json", manifest)
     finalizer = finalize_scratch if settings["arms"] == ["scratch"] else finalize
     final_report = finalizer(root, settings, report, manifest, deadline)
     manifest["elapsed_seconds"] = time.time() - started
     manifest["status"] = "complete" if final_report["qualified"] and final_report["all_runs_complete"] and final_report["all_checkpoints_verified"] else "inconclusive"
-    manifest["budget_respected"] = time.time() <= deadline
     save_json(work / "manifest.json", manifest)
     final_report["provenance"] = manifest
     final_report["profile"] = profiling

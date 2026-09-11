@@ -1,4 +1,4 @@
-"""A bounded, single-seed actor-critic showcase of CLEAR and continual backpropagation."""
+"""A single-seed actor-critic stability-plasticity study of CLEAR and continual backpropagation."""
 
 import os
 from pathlib import Path

@@ -1,11 +1,10 @@
-experiment: showcase
+experiment: stability-plasticity
 seed: 0
 suite: auto
-max_seconds: 3600
 output: results
 workers: auto
 arms: [finetune, cbp, replay, clear, clear_cbp]
-cycles: 20
+cycles: 5
 device: cuda
 smoke: false
 train:
@@ -16,7 +15,7 @@ train:
   unroll_length: 16
   batch_unrolls: 16
   num_envs: 16
-  block_steps: 32768
+  block_steps: 499968
   probe_steps: 32768
   value_weight: 0.5
   entropy_weight: 0.005
@@ -32,8 +31,8 @@ cbp:
   decay_rate: 0.99
   dead_threshold: 0.025
 eval:
-  episodes: 1
-  period: 10000
+  episodes: 10
+  period: 25000
   fixed_observations: 256
   clips: true
   clip_stride: 4

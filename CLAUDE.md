@@ -1,7 +1,7 @@
 # CLAUDE.md
 
 Continual RL mini-project: CLEAR, CBP, CLEAR+CBP, fine-tuning, and replay without cloning.
-One actor-critic implementation, seed 0, and a one-hour cap for the full experiment.
+One actor-critic implementation, seed 0, and a study sized by `cycles` and `block_steps`.
 Start with contextual CartPole; fall back to MinAtar if qualification fails.
 
 ## Layout
@@ -48,7 +48,8 @@ Writing into an existing output requires `--overwrite`, which archives it under 
   100 chars. Tests enforce these limits. No type hints; use dicts rather than dataclasses.
 - Never stage, commit, or push unless asked.
 - Keep one seed. No confidence intervals or statistical rankings.
-- Every phase receives a deadline; expiry records a status instead of raising past the boundary.
+- No wall-clock budget: `cycles` and `block_steps` fix the work. Only profiling is time-boxed.
+- A job still honours a passed deadline; expiry records a status instead of raising past it.
 - Keep `torch.set_num_threads(1)` to prevent oversubscription across workers.
 - Maintain identical initialization, batch size, and update ratio across comparison arms.
 - `block_steps` sets how long each task trains before switching; `cycles` repeats the sequence.

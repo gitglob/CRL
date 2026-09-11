@@ -110,20 +110,22 @@ def learn_rollout(agent, data):
 
 
 @torch.no_grad()
-def evaluate(agent, tasks, episodes, deadline=float("inf"), random_policy=False):
+def evaluate(agent, tasks, episodes, deadline=float("inf"), random_policy=False, moment=0):
     scores = {}
     for task in tasks:
         check_time(deadline)
         envs = [make_env(agent.suite, task) for _ in range(episodes)]
         try:
-            states = [env.reset(seed=seed_for(task, 500 + i))[0] for i, env in enumerate(envs)]
+            # Seeds follow the evaluation point: fresh episodes each time, still reproducible.
+            states = [env.reset(seed=seed_for(task, 500 + moment + i))[0] for i, env in enumerate(envs)]
             totals = np.zeros(episodes)
             active = np.ones(episodes, dtype=bool)
             steps = 0
-            rng = np.random.default_rng(seed_for(task, 77))
+            rng = np.random.default_rng(seed_for(task, 77 + moment))
+            generator = torch.Generator(device=agent.device).manual_seed(seed_for(task, 77 + moment))
             while active.any():
                 check_time(deadline)
-                actions = rng.integers(agent.actions, size=episodes) if random_policy else agent.act(states, greedy=True)[0]
+                actions = rng.integers(agent.actions, size=episodes) if random_policy else agent.act(states, rng=generator)[0]
                 for i, env in enumerate(envs):
                     if not active[i]:
                         continue
@@ -163,7 +165,7 @@ def probe_tasks(source, deadline, label, results=None):
         try:
             while collector.steps <= budget:
                 if collector.steps >= next_measure or collector.steps == budget:
-                    report = evaluate(agent, [task], config["eval"]["episodes"], deadline)[task]
+                    report = evaluate(agent, [task], config["eval"]["episodes"], deadline, moment=collector.steps)[task]
                     points.append({"steps": collector.steps, **report})
                     next_measure = collector.steps + interval
                 if collector.steps == budget:
@@ -232,11 +234,11 @@ def run_job(job):
                 learn_rollout(agent, data)
                 if steps_before + collector.steps >= next_measure and collector.steps < budget:
                     # Every task, not just the trained one: retention must be measured.
-                    scores = evaluate(agent, tasks, config["eval"]["episodes"], deadline)
+                    scores = evaluate(agent, tasks, config["eval"]["episodes"], deadline, moment=steps_before + collector.steps)
                     points.append({"steps": collector.steps, "episodes": logged_before + len(collector.episodes), "return": float(np.mean([scores[name]["return"] for name in pool])), "scores": scores})
                     while next_measure <= steps_before + collector.steps:
                         next_measure += period
-            scores = evaluate(agent, tasks, config["eval"]["episodes"], deadline)
+            scores = evaluate(agent, tasks, config["eval"]["episodes"], deadline, moment=steps_before + collector.steps)
             points.append({"steps": collector.steps, "episodes": logged_before + len(collector.episodes), "return": float(np.mean([scores[name]["return"] for name in pool])), "scores": {name: scores[name] for name in pool}})
             metrics["env_steps"] += collector.steps
             metrics["attempted_env_steps"] = metrics["env_steps"]

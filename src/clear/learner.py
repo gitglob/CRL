@@ -72,10 +72,10 @@ class ActorCritic:
         self.last = {}
 
     @torch.no_grad()
-    def act(self, observations, greedy=False):
+    def act(self, observations, greedy=False, rng=None):
         states = torch.as_tensor(np.asarray(observations), device=self.device, dtype=torch.float32)
         logits = self.actor(states)
-        actions = logits.argmax(dim=-1) if greedy else torch.multinomial(logits.softmax(dim=-1), 1, generator=self.action_rng).squeeze(-1)
+        actions = logits.argmax(dim=-1) if greedy else torch.multinomial(logits.softmax(dim=-1), 1, generator=self.action_rng if rng is None else rng).squeeze(-1)
         values = self.critic(states).squeeze(-1)
         return actions.cpu().numpy(), logits.cpu().numpy(), values.cpu().numpy()
 

@@ -27,7 +27,7 @@ def experiment_notes(root, runs, summary, qualification, manifest, common):
     elapsed = manifest.get("elapsed_seconds", time.time() - manifest["started_at"])
     steps = [data["compared_env_steps"] for data in summary.values()]
     exposure = f"{steps[0]:,}" if steps and len(set(steps)) == 1 else "See the individual run files for"
-    lines = ["", f"The pipeline took **{elapsed / 60:.1f} minutes** on {manifest['gpu']}, with {manifest['workers']} concurrent runs selected by profiling. Each compared arm received {exposure} main-training transitions, within a configured maximum of {manifest['max_seconds'] / 60:.0f} minutes."]
+    lines = ["", f"The pipeline took **{elapsed / 60:.1f} minutes** on {manifest['gpu']}, with {manifest['workers']} concurrent runs selected by profiling. Each compared arm received {exposure} main-training transitions."]
     cart = manifest.get("qualification_history", {}).get("cartpole")
     if manifest["suite"] == "minatar" and cart is not None:
         lines.extend(["", f"CartPole did not qualify (learning **{cart['learnable']}**, forgetting **{cart['forgetting_demonstrated']}**, plasticity loss **{cart['plasticity_loss_demonstrated']}**), so the fallback selected MinAtar."])
@@ -202,6 +202,7 @@ def clip(agent, task, path, deadline):
     palette = np.asarray(plt.get_cmap("tab10").colors) * 255
     try:
         state, _ = env.reset(seed=seed_for(task, 500))
+        generator = torch.Generator(device=agent.device).manual_seed(seed_for(task, 77))
         while not done:
             check_time(deadline)
             if steps % agent.config["eval"]["clip_stride"] == 0:
@@ -213,7 +214,7 @@ def clip(agent, task, path, deadline):
                     frame = Image.fromarray(rgb.astype(np.uint8)).resize((240, 240), Image.Resampling.NEAREST)
                 ImageDraw.Draw(frame).text((5, 5), f"{LABELS[agent.arm]} | {task} | return {total:.0f}", fill="black" if agent.suite == "cartpole" else "white")
                 frames.append(frame)
-            action = agent.act([state], greedy=True)[0][0]
+            action = agent.act([state], rng=generator)[0][0]
             state, reward, terminated, truncated, _ = env.step(action)
             total += reward
             steps += 1
@@ -248,7 +249,7 @@ def audit_references(references, config, suite, tasks, deadline, audit, clips):
             agent = ActorCritic(config, suite, entry["arm"])
             payload = torch.load(entry["directory"] / "model.pt", map_location=agent.device, weights_only=False)
             agent.load_weights(payload["weights"])
-            actual = evaluate(agent, tasks, config["eval"]["episodes"], deadline)
+            actual = evaluate(agent, tasks, config["eval"]["episodes"], deadline, moment=row["steps"])
             match = all(abs(actual[task]["return"] - row["scores"][task]["return"]) < 1e-6 for task in tasks)
             audit.append({"arm": name, "block": row["block"], "match": match, "scores": actual})
             if config["eval"]["clips"]:
@@ -283,7 +284,7 @@ def finalize_scratch(root, config, qualification, manifest, deadline, saved_arti
             agent = ActorCritic(config, config["suite"], "scratch")
             payload = torch.load(directory / "model.pt", map_location=agent.device, weights_only=False)
             agent.load_weights(payload["weights"])
-            scores = evaluate(agent, [task], config["eval"]["episodes"], deadline)
+            scores = evaluate(agent, [task], config["eval"]["episodes"], deadline, moment=run["matrix"][-1]["steps"])
             match = scores[task] == references[task]["scores"]
             audit.append({"arm": "scratch", "task": task, "match": match, "scores": scores})
             if config["eval"]["clips"]:
@@ -340,7 +341,7 @@ def finalize(root, config, qualification, manifest, deadline, saved_artifacts=No
             agent = ActorCritic(config, suite, arm)
             payload = torch.load((root / arm / "model.pt") if common == run["completed_blocks"] else (Path(config.get("workspace", root / "work")) / "checkpoints" / arm / f"block_{common:04d}.pt"), map_location=agent.device, weights_only=False)
             agent.load_weights(payload["weights"])
-            actual = evaluate(agent, tasks, config["eval"]["episodes"], deadline)
+            actual = evaluate(agent, tasks, config["eval"]["episodes"], deadline, moment=row["steps"])
             match = all(abs(actual[task]["return"] - row["scores"][task]["return"]) < 1e-6 for task in tasks)
             audit.append({"arm": arm, "block": common, "match": match, "scores": actual})
             if config["eval"]["clips"]:
@@ -383,7 +384,7 @@ def finalize(root, config, qualification, manifest, deadline, saved_artifacts=No
     if has_baseline:
         lines.extend(["", "![Baseline performance](baseline.png)", "", "One panel per baseline arm (scratch, joint training, fine-tuning; whichever have completed under this root), one line per task."])
     lines.extend(measurement_notes(runs, summary, tasks, common))
-    lines.extend(["", "CartPole normalization is return / 500. MinAtar normalization is (return - random) / (scratch - random), without clipping; it is unavailable when scratch does not outperform random. Raw game returns remain the primary comparison.", "", "## Retention and fresh-task learning", "", "![Performance](performance.png)", "", "One panel per task, plotted against cumulative environment steps. Every task is evaluated on the same fixed step grid (`eval.period`) plus each block boundary, so all tasks and arms share one clock: episode length differs by task, which would otherwise give each task a different axis. Each point is the mean return over `eval.episodes` greedy evaluation episodes. Solid stretches mark the blocks where that panel's task was being trained and dashed stretches the blocks where others were, but both are measured, not interpolated. A task's line begins at its first training block. A rise during a task's own block is acquisition; the drop across the following dashed span is what the intervening tasks cost it.", "", "The initial probe is the paired scratch reference because every arm starts with the same seeded weights. Midpoint and final probes copy weights into new, isolated learners with fresh optimizers, fresh-only updates, and no replay or CBP. Their scores test the adaptability of the learned parameters; they do not alter the main run or test the accumulated optimizer state.", "", "![Probe curves](probe_curves.png)", "", "![Plasticity diagnostics](plasticity.png)", "", "## Implementation and interpretation", "", "All arms use separate two-layer ReLU actor and critic MLPs, identical initialization, AdamCBP, V-trace targets, and equal learner batch and environment budgets. CLEAR mixes fresh and reservoir unrolls and adds KL(behavior || current) policy cloning and historical-value cloning only on replay. The replay arm disables those cloning losses. CBP resets low-contribution mature units in both networks, including optimizer moments and elementwise counters.", "", "The algorithms can be combined, but a CLEAR+CBP advantage must be observed rather than assumed. Read its retention and probe curves against both single-intervention arms. Results here describe one trajectory; the experiment does not establish a general ranking.", "", "CLEAR loss weights follow the [paper](https://arxiv.org/pdf/1811.11682). CBP uses contribution utility from the [authors' RL implementation](https://github.com/shibhansh/loss-of-plasticity), with miniature-study maturity 1,000 updates, replacement rate 0.0001, decay 0.99, and no weight decay in any arm. This is an algorithm showcase, not a reproduction of either paper's full benchmark.", "", "## Artifacts and verification", "", f"All requested runs completed: **{complete}**. All matched checkpoints re-evaluated correctly: **{verified}**.", "", "Resolved configurations, phase deadlines, throughput, code revision, package versions, losses, replay use, replacement counts, checkpoints, and raw curves are saved alongside this report. The comparison uses the shared completed-block prefix if a deadline interrupted a run; probe checkpoints with different ages are flagged in summary.json.", "", "GPU scheduling uses measured throughput with reserved memory headroom. Timing, concurrency and qualification are recorded in summary.json. Pilot runs, profiling, intermediate checkpoints and source snapshots live under tmp/.", ""])
+    lines.extend(["", "CartPole normalization is return / 500. MinAtar normalization is (return - random) / (scratch - random), without clipping; it is unavailable when scratch does not outperform random. Raw game returns remain the primary comparison.", "", "## Retention and fresh-task learning", "", "![Performance](performance.png)", "", "One panel per task, plotted against cumulative environment steps. Every task is evaluated on the same fixed step grid (`eval.period`) plus each block boundary, so all tasks and arms share one clock: episode length differs by task, which would otherwise give each task a different axis. Each point is the mean return over `eval.episodes` episodes sampled from the policy, with environment seeds derived from the evaluation point so successive measurements are independent yet reproducible. Solid stretches mark the blocks where that panel's task was being trained and dashed stretches the blocks where others were, but both are measured, not interpolated. A task's line begins at its first training block. A rise during a task's own block is acquisition; the drop across the following dashed span is what the intervening tasks cost it.", "", "The initial probe is the paired scratch reference because every arm starts with the same seeded weights. Midpoint and final probes copy weights into new, isolated learners with fresh optimizers, fresh-only updates, and no replay or CBP. Their scores test the adaptability of the learned parameters; they do not alter the main run or test the accumulated optimizer state.", "", "![Probe curves](probe_curves.png)", "", "![Plasticity diagnostics](plasticity.png)", "", "## Implementation and interpretation", "", "All arms use separate two-layer ReLU actor and critic MLPs, identical initialization, AdamCBP, V-trace targets, and equal learner batch and environment budgets. CLEAR mixes fresh and reservoir unrolls and adds KL(behavior || current) policy cloning and historical-value cloning only on replay. The replay arm disables those cloning losses. CBP resets low-contribution mature units in both networks, including optimizer moments and elementwise counters.", "", "The algorithms can be combined, but a CLEAR+CBP advantage must be observed rather than assumed. Read its retention and probe curves against both single-intervention arms. Results here describe one trajectory; the experiment does not establish a general ranking.", "", "CLEAR loss weights follow the [paper](https://arxiv.org/pdf/1811.11682). CBP uses contribution utility from the [authors' RL implementation](https://github.com/shibhansh/loss-of-plasticity), with miniature-study maturity 1,000 updates, replacement rate 0.0001, decay 0.99, and no weight decay in any arm. This is an algorithm comparison, not a reproduction of either paper's full benchmark.", "", "## Artifacts and verification", "", f"All requested runs completed: **{complete}**. All matched checkpoints re-evaluated correctly: **{verified}**.", "", "Resolved configurations, throughput, code revision, package versions, losses, replay use, replacement counts, checkpoints, and raw curves are saved alongside this report. The comparison uses the shared completed-block prefix if a run did not finish; probe checkpoints with different ages are flagged in summary.json.", "", "The study runs `cycles` passes over the task sequence with no wall-clock budget; only worker profiling is time-boxed. Concurrency and qualification are recorded in summary.json. Pilot runs, profiling, intermediate checkpoints and source snapshots live under tmp/.", ""])
     if clips:
         lines.extend(["### Representative clips", ""])
         for item in clips:

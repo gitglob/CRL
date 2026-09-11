@@ -29,11 +29,9 @@ def load_config(path="config/study.yaml", seen=()):
 
 def validate(config):
     if config["seed"] != 0:
-        raise ValueError("The showcase uses exactly one seed: 0")
+        raise ValueError("The study uses exactly one seed: 0")
     if config["suite"] not in ("auto", "cartpole", "minatar"):
         raise ValueError("Unknown suite")
-    if config["max_seconds"] <= 0 or config["max_seconds"] > 3600:
-        raise ValueError("max_seconds must be in (0, 3600]")
     arms = config.get("arms", MAIN_ARMS)
     if not arms or len(set(arms)) != len(arms) or any(arm not in ARMS for arm in arms):
         raise ValueError("arms must be a nonempty list of unique supported arms")
@@ -63,10 +61,9 @@ def validate(config):
 
 
 def parser():
-    result = argparse.ArgumentParser(description="Run the timed CLEAR and CBP showcase")
+    result = argparse.ArgumentParser(description="Run the stability-plasticity study of CLEAR and CBP")
     result.add_argument("--config", default="config/study.yaml")
     result.add_argument("--suite", choices=("auto", "cartpole", "minatar"))
-    result.add_argument("--max-seconds", type=float)
     result.add_argument("--out", type=Path)
     result.add_argument("--workers", type=int, choices=(1, 2, 4))
     result.add_argument("--arm", choices=ARMS)
@@ -76,7 +73,7 @@ def parser():
 
 def resolve(args):
     config = deepcopy(load_config(args.config))
-    for name in ("suite", "max_seconds", "workers"):
+    for name in ("suite", "workers"):
         if getattr(args, name, None) is not None:
             config[name] = getattr(args, name)
     if args.out:
