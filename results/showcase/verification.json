@@ -1,0 +1,61 @@
+{
+  "checked_at": 1789104203.7254324,
+  "command": ".venv/bin/python -m pytest -q",
+  "environment": "Repository .venv with host RTX 3090 access",
+  "tests_passed": 127,
+  "test_seconds": 33.58,
+  "complete_smoke_before_training": {
+    "output": "results/showcase_smoke",
+    "seconds": 83.72630643844604,
+    "all_runs_complete": true,
+    "all_checkpoints_verified": true
+  },
+  "artifact_checks": {
+    "training_source_hash_matches": true,
+    "raw_metrics_unchanged_by_reanalysis": true,
+    "matched_main_runs": 5,
+    "matched_checkpoint_audits": 5,
+    "block_checkpoints": 305,
+    "readable_figures": 5,
+    "readable_clips": 15,
+    "local_report_links_exist": true,
+    "historical_results_unchanged": true
+  },
+  "post_run_changes": [
+    "Probe-reference learnability guard and interpretation",
+    "Saved-data report regeneration and figure improvements",
+    "Standalone scratch and multitask command reporting and budgets",
+    "Additional raw per-task scores in future rollout curves"
+  ],
+  "validated_source_hashes": {
+    "src/__init__.py": "a76b0ee8fe3acc0cde0d8d51cc51d4913ab5a6308d5f5163616a3afa33cc1478",
+    "src/cbp.py": "d1f3181212ecce99e181ac0905fa90e21f0f60c4f5d3e05dacd3875d415efb95",
+    "src/compare.py": "e28a71256dcd9c794be4339cfdf8cbecada5e9febc8367808bac9bec10bdcb54",
+    "src/dqn.py": "e2b15cb6bcfb0d4ba526d8cffd2c22245098d23ee0bd822212d7dd67ea7ddef6",
+    "src/replay.py": "cabf4e873859f365ab8cf83b1a98f8cf67927b6ba131037f5aa4fb499706ce6e",
+    "src/showcase/__init__.py": "ac5d53fc06fba6dc14bc30e818c673746e34db307954e6ee8f9c76504062e972",
+    "src/showcase/config.py": "c8c9a2402fa936366c7ea2a709cd5dc2071312d80fc78deace83d13b08ba6f04",
+    "src/showcase/envs.py": "2b235c9871a83142270444dc2bff725d9fdb82622f8706eedac2cc6717e08354",
+    "src/showcase/learner.py": "792d3b96ce20defd8528c897967cba173f75a0e032366a8611de93e2d8ccabf8",
+    "src/showcase/reanalyze.py": "40092579db02cdd12dbe7587be1451349f18b6532de5046aed4fcb9b57a6c5dd",
+    "src/showcase/replay.py": "22ef310862a6e97da0d5c7f70d1b90b8099a5d34ae7951e6f6430b3886d13935",
+    "src/showcase/report.py": "68d259519d96c88d63e584b3a943f23da6051cc7812b2baab86b6ee57052439c",
+    "src/showcase/runtime.py": "b3baea64196bc98e9c5edd19c9f74a448fc6bfc17fd1578458c9c6a220e11b08",
+    "src/showcase/study.py": "fa54070987a7bd0e9bf46a8335c190346c04cc07cb37ee3a32f924ad6382385c",
+    "src/study.py": "09065c3ce106fae74249aa3eeb85179d5e1b3d5c3b8cfa7c537955c1f09e2349",
+    "src/train.py": "777401b8c67d5eff24fd804c2dcaa969a1daffcbc2b74d09e01056bfaabb8716",
+    "src/utils/__init__.py": "530b23cbecd3ed92c91baa897d90dd4ffe4e5df14e876aed74f111b03b7e97d3",
+    "src/utils/compare.py": "ca335408bc3c2e7b7a204a7b35e670fa632a2c45438fe97471849e4e87057ea9",
+    "src/utils/config.py": "b13c8e4c7b0f2118ce904b751777ea206d349b4f8f78b5c19179e10573686bb9",
+    "src/utils/envs.py": "fc2687dab019bb8d7d7eeef0716ac36684854dbd5389ad677f47e93056125370",
+    "src/utils/evaluate.py": "1487bf228909d95efc67e77ffc40dca110b9af5fa4889178fb2cda556c93c80c",
+    "src/utils/io.py": "9fc32dd2c721c3f6ee941cce82edebe9a4e304b202f79c4e9550f9e34da48bbf",
+    "src/utils/metrics.py": "e242093e24c3b97a4fd7b86a0d257371dc8494f429594f9a27cf865804dab092",
+    "src/utils/study.py": "6534ea3bf99eadf9b88c8418dee5398c2491fa5d6377e7194e60095a3f975a7e",
+    "src/utils/video.py": "e2e37e9ade077799df728d229d274279f1b09c3a60dcb8e3c6b08ce876e31a25",
+    "tests/test_core.py": "de3e932cde325e117b2f3ff9db8f5c2e61033cc77e1774b6e4f3c44966d06146",
+    "tests/test_dqn.py": "0b51eb1c957052eb6643fba59b07a34b92194284459eaae837497969bc985a91",
+    "tests/test_parallel.py": "cc10b4a744a24eab0367c5ea57c7a0bd33af2c9fc2ff71d652a2570e493dd9a4",
+    "tests/test_showcase.py": "515c7b52a8d99a1f33a9326625d17b8e7de9a2772f6d4cce5b1d59880569e4f0"
+  }
+}

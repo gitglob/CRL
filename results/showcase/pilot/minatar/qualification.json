@@ -1,0 +1,181 @@
+{
+  "qualified": false,
+  "all_pilots_complete": true,
+  "learnable": false,
+  "forgetting_demonstrated": false,
+  "plasticity_loss_demonstrated": false,
+  "probe_auc_threshold_met": true,
+  "probe_reference_learnable": {
+    "asterix": false
+  },
+  "scratch_returns": {
+    "breakout": 0.4,
+    "space_invaders": 2.8,
+    "freeway": 13.4
+  },
+  "joint_returns": {
+    "breakout": 0.4,
+    "space_invaders": 6.0,
+    "freeway": 0.0
+  },
+  "random_scores": {
+    "breakout": {
+      "return": 0.2,
+      "episodes": [
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "env_steps": 40
+    },
+    "space_invaders": {
+      "return": 3.6,
+      "episodes": [
+        1.0,
+        2.0,
+        3.0,
+        2.0,
+        10.0
+      ],
+      "env_steps": 284
+    },
+    "freeway": {
+      "return": 0.8,
+      "episodes": [
+        0.0,
+        2.0,
+        0.0,
+        1.0,
+        1.0
+      ],
+      "env_steps": 12500
+    },
+    "asterix": {
+      "return": 0.2,
+      "episodes": [
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "env_steps": 245
+    }
+  },
+  "forgetting_tasks": [
+    "breakout"
+  ],
+  "probe_auc_deficits": {
+    "asterix": 0.4999999999999999
+  },
+  "retention_drops": [
+    {
+      "block": 1,
+      "task": "breakout",
+      "since_block": 0,
+      "drop": 0.4,
+      "return": 0.0
+    },
+    {
+      "block": 2,
+      "task": "breakout",
+      "since_block": 0,
+      "drop": 0.4,
+      "return": 0.0
+    },
+    {
+      "block": 2,
+      "task": "space_invaders",
+      "since_block": 1,
+      "drop": 0.0,
+      "return": 0.0
+    },
+    {
+      "block": 3,
+      "task": "space_invaders",
+      "since_block": 1,
+      "drop": 0.0,
+      "return": 0.0
+    },
+    {
+      "block": 3,
+      "task": "freeway",
+      "since_block": 2,
+      "drop": 0.0,
+      "return": 0.0
+    },
+    {
+      "block": 4,
+      "task": "breakout",
+      "since_block": 3,
+      "drop": 0.9999999999999999,
+      "return": 0.4
+    },
+    {
+      "block": 4,
+      "task": "freeway",
+      "since_block": 2,
+      "drop": 0.0,
+      "return": 0.0
+    },
+    {
+      "block": 5,
+      "task": "breakout",
+      "since_block": 3,
+      "drop": 0.9999999999999999,
+      "return": 0.4
+    },
+    {
+      "block": 5,
+      "task": "space_invaders",
+      "since_block": 4,
+      "drop": 2.0,
+      "return": 3.0
+    }
+  ],
+  "fresh_reference": "Initial weights equal the seeded scratch network; the initial probes are the paired scratch reference.",
+  "jobs": [
+    {
+      "out": "results/showcase/pilot/minatar/scratch/breakout",
+      "status": "complete",
+      "completed_blocks": 1,
+      "seconds": 8.05122423171997,
+      "transitions_per_second": 4069.940055936043,
+      "gpu_peak_bytes": 35667456
+    },
+    {
+      "out": "results/showcase/pilot/minatar/scratch/space_invaders",
+      "status": "complete",
+      "completed_blocks": 1,
+      "seconds": 9.753586769104004,
+      "transitions_per_second": 3359.584609817356,
+      "gpu_peak_bytes": 35667456
+    },
+    {
+      "out": "results/showcase/pilot/minatar/scratch/freeway",
+      "status": "complete",
+      "completed_blocks": 1,
+      "seconds": 14.063968658447266,
+      "transitions_per_second": 2329.925556277353,
+      "gpu_peak_bytes": 35667456
+    },
+    {
+      "out": "results/showcase/pilot/minatar/multitask",
+      "status": "complete",
+      "completed_blocks": 1,
+      "seconds": 15.323891162872314,
+      "transitions_per_second": 6415.080801290021,
+      "gpu_peak_bytes": 35667456
+    },
+    {
+      "out": "results/showcase/pilot/minatar/finetune",
+      "status": "complete",
+      "completed_blocks": 6,
+      "seconds": 46.3318088054657,
+      "transitions_per_second": 4243.47775467826,
+      "gpu_peak_bytes": 49638912
+    }
+  ]
+}

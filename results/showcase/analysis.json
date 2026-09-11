@@ -1,0 +1,32 @@
+{
+  "started_at": 1789104123.3855011,
+  "training_source_sha256": "bed011cb8f64d71b4d00bce3ca9a1eb4aab5c33bb0cc7e0ef1008fe1f876da5a",
+  "analysis_source_hashes": {
+    "/home/ipl1/dev/git/Cartpole/src/showcase/reanalyze.py": "40092579db02cdd12dbe7587be1451349f18b6532de5046aed4fcb9b57a6c5dd",
+    "/home/ipl1/dev/git/Cartpole/src/showcase/study.py": "fa54070987a7bd0e9bf46a8335c190346c04cc07cb37ee3a32f924ad6382385c",
+    "/home/ipl1/dev/git/Cartpole/src/showcase/report.py": "68d259519d96c88d63e584b3a943f23da6051cc7812b2baab86b6ee57052439c"
+  },
+  "raw_metric_hashes": {
+    "main/cbp/metrics.json": "05d604367fcf5bcc65e502a6cde23678fd372882979656d72f391bbf7c7dd8c2",
+    "main/clear/metrics.json": "a32ec275c788c4a53c6c6070b8d5f6147a82fd5fab1ff62b37e8f018c9c2fb8c",
+    "main/clear_cbp/metrics.json": "669caeaa5e5d062e91b046f7c7d001f966873cd985dbc20667249b18f659045e",
+    "main/finetune/metrics.json": "914866936440e821a196e4392ded3f4e0ff822803ec5a80e1ed26362c08693da",
+    "main/replay/metrics.json": "c411160449abed3c5ee10da7e07faa280e3727077dc84d7db9ca099eef998e80",
+    "pilot/cartpole/finetune/metrics.json": "71c347130868f3d84aebad84840234a7b84bb06313ab7cddd07399f5777dd2a3",
+    "pilot/cartpole/multitask/metrics.json": "2b8f9b29e607a774afc06a6eca9b19ddc0d93712870c2dd0e2ad91f70248e6d3",
+    "pilot/cartpole/scratch/identity/metrics.json": "6ed803540dfaee1031574bafc4da142ae67915f7872c2c3c1c0f8274ec377b93",
+    "pilot/cartpole/scratch/identity_reverse/metrics.json": "26e7e06056eddb3dc161ef5636f761d9d1c70221d89b8a9364398f9dc9405ac9",
+    "pilot/cartpole/scratch/swapped/metrics.json": "df16f55feb9c451d9f637053789efb4ea2e9de2bf2676047df33dbc21fb31d21",
+    "pilot/cartpole/scratch/swapped_reverse/metrics.json": "ca3aa25cecc91b14a30b32ada4c1171f3c6d0ec3fad6ce28b461d436767ddc35",
+    "pilot/minatar/finetune/metrics.json": "a6379de389a8596b65e80475af8795178cdecdc220bf56c3b1afd931575b9c2e",
+    "pilot/minatar/multitask/metrics.json": "9f6c4462e616cb027d5fbcf6d5407753c60250209327feeecf750425d200eca4",
+    "pilot/minatar/scratch/breakout/metrics.json": "57fedb9f454eb5192a6428a4e9c55f4aed5083104dc4d58eca752f2033f82e36",
+    "pilot/minatar/scratch/freeway/metrics.json": "d2576c45f5fa95f65330262d7decd0a5517b315425cf5c382ce1f319a1e575fc",
+    "pilot/minatar/scratch/space_invaders/metrics.json": "fe4a0170301273eca48dd468de08fc2e301b21fdd812f1e567e3f2439db7a891"
+  },
+  "additional_training_steps": 0,
+  "additional_evaluation_steps": 0,
+  "checkpoint_audits_reused": true,
+  "note": "Post-run reporting correction: separate the raw probe deficit threshold from evidence based on a learned fresh reference. MinAtar uses its existing above-random learning threshold for the probe reference too. The original run was already inconclusive. Original qualification and report are retained in analysis_original.",
+  "seconds": 1.6193640232086182
+}

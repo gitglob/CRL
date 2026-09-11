@@ -1,0 +1,202 @@
+[
+  {
+    "arm": "finetune",
+    "block": 60,
+    "match": true,
+    "scores": {
+      "breakout": {
+        "return": 4.8,
+        "episodes": [
+          5.0,
+          6.0,
+          6.0,
+          2.0,
+          5.0
+        ],
+        "env_steps": 288
+      },
+      "space_invaders": {
+        "return": 43.2,
+        "episodes": [
+          23.0,
+          70.0,
+          68.0,
+          46.0,
+          9.0
+        ],
+        "env_steps": 1672
+      },
+      "freeway": {
+        "return": 11.0,
+        "episodes": [
+          9.0,
+          18.0,
+          5.0,
+          0.0,
+          23.0
+        ],
+        "env_steps": 12500
+      }
+    }
+  },
+  {
+    "arm": "cbp",
+    "block": 60,
+    "match": true,
+    "scores": {
+      "breakout": {
+        "return": 5.4,
+        "episodes": [
+          5.0,
+          6.0,
+          6.0,
+          5.0,
+          5.0
+        ],
+        "env_steps": 320
+      },
+      "space_invaders": {
+        "return": 57.8,
+        "episodes": [
+          95.0,
+          21.0,
+          34.0,
+          93.0,
+          46.0
+        ],
+        "env_steps": 2306
+      },
+      "freeway": {
+        "return": 7.2,
+        "episodes": [
+          1.0,
+          8.0,
+          5.0,
+          0.0,
+          22.0
+        ],
+        "env_steps": 12500
+      }
+    }
+  },
+  {
+    "arm": "replay",
+    "block": 60,
+    "match": true,
+    "scores": {
+      "breakout": {
+        "return": 5.6,
+        "episodes": [
+          6.0,
+          5.0,
+          5.0,
+          6.0,
+          6.0
+        ],
+        "env_steps": 330
+      },
+      "space_invaders": {
+        "return": 58.4,
+        "episodes": [
+          95.0,
+          16.0,
+          65.0,
+          8.0,
+          108.0
+        ],
+        "env_steps": 2100
+      },
+      "freeway": {
+        "return": 17.8,
+        "episodes": [
+          27.0,
+          26.0,
+          30.0,
+          0.0,
+          6.0
+        ],
+        "env_steps": 12500
+      }
+    }
+  },
+  {
+    "arm": "clear",
+    "block": 60,
+    "match": true,
+    "scores": {
+      "breakout": {
+        "return": 5.6,
+        "episodes": [
+          6.0,
+          5.0,
+          5.0,
+          6.0,
+          6.0
+        ],
+        "env_steps": 330
+      },
+      "space_invaders": {
+        "return": 34.4,
+        "episodes": [
+          69.0,
+          23.0,
+          46.0,
+          8.0,
+          26.0
+        ],
+        "env_steps": 1378
+      },
+      "freeway": {
+        "return": 13.0,
+        "episodes": [
+          0.0,
+          18.0,
+          21.0,
+          16.0,
+          10.0
+        ],
+        "env_steps": 12500
+      }
+    }
+  },
+  {
+    "arm": "clear_cbp",
+    "block": 60,
+    "match": true,
+    "scores": {
+      "breakout": {
+        "return": 5.6,
+        "episodes": [
+          6.0,
+          5.0,
+          5.0,
+          6.0,
+          6.0
+        ],
+        "env_steps": 330
+      },
+      "space_invaders": {
+        "return": 37.4,
+        "episodes": [
+          23.0,
+          47.0,
+          47.0,
+          23.0,
+          47.0
+        ],
+        "env_steps": 1642
+      },
+      "freeway": {
+        "return": 0.0,
+        "episodes": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "env_steps": 12500
+      }
+    }
+  }
+]

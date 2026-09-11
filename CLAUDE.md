@@ -1,69 +1,57 @@
 # CLAUDE.md
 
-Continual RL study: one DQN trained sequentially on four CartPole dynamics variants,
-measuring Average Performance, Forward Transfer and Forgetting. Six arms: `scratch`,
-`finetune`, `replay`, `cbp`, `replay_cbp`, `multitask`. Structure and style deliberately
-mirror the sibling repo `/home/pangr/dev/FourRooms_v0`. Set up and verified, never run.
+Continual RL mini-project: CLEAR, CBP, CLEAR+CBP, fine-tuning, and replay without cloning.
+The default study is an actor-critic showcase with one seed (0) and a one-hour experiment cap.
+Start with contextual CartPole; switch to MinAtar when the CartPole qualification gate fails.
 
 ## Architecture
 
-- `config/*.yaml` — nested dicts with `inherits:`. `base` is the real sweep, `smoke` a
-  2k-step structural check, `preflight` the task-suite degeneracy check. Validated
-  eagerly and loudly.
-- `src/dqn.py` — `network()`, `DQNAgent`, Double-DQN targets, soft target update.
-- `src/replay.py` — `Replay` (current-task FIFO) and `PersistentMemory` (bounded
-  cross-task reservoir).
-- `src/cbp.py` — `ContinualBackprop`, `FeatureProbe`, `AdamCBP` (elementwise step counter).
-- `src/train.py` — `train()` over a block sequence; covers continual, scratch and
-  multitask shapes.
-- `src/utils/` — `envs` (the only env factory), `evaluate`, `metrics` (AP/FT/F formulas),
-  `study` (orchestration + audit), `compare` (figures + REPORT.md), `config`, `io`.
-- Artifacts: `results/<root>/<arm>[/<task>]/{config.yaml,metrics.json,model.pt}`, plus one
-  `videos/<task>.gif` per task from the finished policy. One seed per study, so the seed is not
-  in the path and `benchmark.seeds` must hold exactly one entry.
+- `src/showcase/learner.py` — separate actor/critic MLPs, V-trace, cloning, checkpoint state.
+- `src/showcase/replay.py` — global reservoir of complete unrolls, without task labels.
+- `src/showcase/envs.py` — contextual CartPole and padded six-action MinAtar adapters.
+- `src/showcase/runtime.py` — synchronous collection, evaluation, probes, bounded training.
+- `src/showcase/study.py` — profiling, qualification, fallback, matched budgets, phase deadlines.
+- `src/showcase/report.py` — checkpoint audit, comparisons, figures, report, clips.
+- `src/cbp.py` — CBP transaction, feature probes, and Adam with elementwise counters.
+- `config/showcase*.yaml` — full experiment and smoke configurations.
+- `src/study.py` — default showcase dispatch; explicit old configs retain the DQN pipeline.
+- `results/continual` — preserved historical DQN results; never overwrite for the new study.
+- `results/showcase` — generated actor-critic experiment and qualification artifacts.
 
 ## Commands
 
 ```bash
-.venv/bin/python -m pytest -q                             # tests, seconds
-.venv/bin/python -m src.study --config config/smoke.yaml  # full pipeline, ~40s
-.venv/bin/python -m src.study --config config/base.yaml --workers 8
+.venv/bin/python -m pytest -q
+.venv/bin/python -m src.study --config config/showcase_smoke.yaml
+.venv/bin/python -m src.study
 ```
+
+Install `requirements-showcase.txt` and `requirements-nn.txt` into the repository `.venv`.
+The RTX 3090 is accessible outside the execution sandbox; sandbox CUDA failure is not host failure.
 
 ## Rules
 
 - This file: at most 80 lines of at most 100 chars. Comments and docstrings: one line, at most
-  100 chars. Both enforced by `tests/test_core.py`.
-- No type hints, dicts not dataclasses, long code lines fine, `print(f"[tag] ...", flush=True)`.
-- Never stage, commit or push unless asked.
-- GPU only: `resolve_device` raises without CUDA and `train.device` rejects `cpu`.
-- The net is too small for the GPU to notice batch size, so prefer fewer, larger updates.
-  Parallelism is `train.num_envs` slots per iteration plus `--workers` across runs.
-- `train.num_envs` must divide `train.timesteps` and `eval.every`, or the eval grid drifts and
-  scratch and continual AUCs stop being comparable.
-- Never set physics on a gymnasium env directly — always `make_task()`. Wrappers do not forward
-  attribute writes, and `total_mass`/`polemass_length` are cached in `__init__`.
-- Bootstrap on `terminated` only. The 500-step limit is truncation, not termination.
-- Keep `torch.set_num_threads(1)`, or parallel workers oversubscribe the cores.
-- Run `config/preflight.yaml` before the sweep: if the variants don't interfere, it is
-  uninformative.
-- Run the tests and the smoke study before claiming a change works. They pin `replay` ==
-  `finetune` on task 1, `cbp` == `replay_cbp` on task 1, and `replacement_rate: 0` == plain DQN.
+  100 chars. Tests enforce these limits. No type hints; use dicts rather than dataclasses.
+- Never stage, commit, or push unless asked. Preserve the old results and source provenance.
+- Keep one seed. No confidence intervals or statistical rankings for this mini-project.
+- The experiment cap includes profiling, pilots, training, probes, evaluation, and reporting.
+- Use GPU access for real training. CPU tensors are supported for numerical unit tests.
+- Keep `torch.set_num_threads(1)` to prevent oversubscription across workers.
+- Maintain identical initialization, batch size, and update ratio across comparison arms.
+- CLEAR replay includes current-task history and uses no task labels or boundary callbacks.
+- Store behavior logits, values, and true next observations before any episode reset.
+- Termination disables bootstrap. Truncation bootstraps but must stop the V-trace recursion.
+- Select CBP units in every layer before changing weights; zero outgoing columns last.
+- Probes use isolated weight copies and fresh optimizers, with replay and CBP disabled.
+- Use fixed observations for diagnostics. Stable rank uses squared singular values.
+- A failed qualification gate is inconclusive. Never relabel poor returns as plasticity loss.
+- Run tests and the complete smoke pipeline before launching the timed full experiment.
+- Record incomplete work as incomplete; re-evaluate saved checkpoints before claiming validity.
 
-## TODO
+## Historical DQN
 
-The sweep has been run: `results/continual` holds all nine runs, `REPORT.md`, five figures and
-24 clips. Headline: both interventions lost to plain fine-tuning (AP 0.749 vs 0.153 replay,
-0.019 cbp), which is the opposite of the hypothesis. README `## Main results` has the reading.
-
-- [ ] `config/cbp_slow.yaml` (replacement rate 1e-5) is the first follow-up. At 1e-4 each unit is
-      replaced ~20 times per run and stable rank collapses to 1.9 against 6.9 for fine-tuning, so
-      the cbp arms plausibly failed from too much plasticity rather than too little.
-- [ ] `config/cbp_l2.yaml` is shipped and still unrun.
-- [ ] More seeds would matter most. At one seed the single-task collapse in the `scratch` baseline
-      is as large as the gaps between arms, so no ranking here is established.
-- [ ] `config/cycles.yaml` runs three passes over the four tasks at the same total budget, where
-      revisits give plasticity loss more room to appear.
-- [ ] Fine-tuning's forgetting is negative: a good `force` policy already solves `default` and
-      `gravity`. Only `pole` is genuinely distinct, so the suite may be too similar to separate
-      retention from transfer. A more dissimilar fourth task would sharpen the comparison.
+`src/dqn.py`, `src/train.py`, and `src/utils/study.py` retain the old workflow. Old first-task
+replay equivalences apply only to that workflow. `docs/legacy_dqn.md` preserves its old README.
+The shared CBP replacement and rank formula are repaired; archived results remain unchanged.
+The old Q-value divergence was observed but its exact causal mechanism was not isolated.

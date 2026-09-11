@@ -51,6 +51,7 @@ class ContinualBackprop:
         self.decay = settings["decay_rate"]
         self.rate = settings["replacement_rate"]
         self.maturity = settings["maturity_threshold"]
+        self.utility = settings.get("utility", "adaptable_contribution")
         self.generator = generator
         self.replacements = 0
         self.state = []
@@ -65,10 +66,11 @@ class ContinualBackprop:
 
     @torch.no_grad()
     def step(self, optimizer, captured):
-        replaced = []
+        selections = []
         for index, (incoming, outgoing) in enumerate(self.pairs):
             features = captured[index]
             if features is None:
+                selections.append((torch.empty(0, dtype=torch.long, device=incoming.weight.device), None))
                 continue
             state = self.state[index]
             # Ages advance before the bias correction is formed: 1 - decay**0 is zero.
@@ -78,37 +80,58 @@ class ContinualBackprop:
             corrected_mean = state["mean_act"] / correction
             outgoing_magnitude = outgoing.weight.abs().sum(dim=0)
             incoming_magnitude = incoming.weight.abs().sum(dim=1)
-            contribution = (features - corrected_mean).abs().mean(dim=0) * outgoing_magnitude
-            state["util"].mul_(self.decay).add_(contribution / (incoming_magnitude + 1e-12), alpha=1 - self.decay)
+            if self.utility == "contribution":
+                contribution = features.abs().mean(dim=0) * outgoing_magnitude
+            else:
+                contribution = (features - corrected_mean).abs().mean(dim=0) * outgoing_magnitude / (incoming_magnitude + 1e-12)
+            state["util"].mul_(self.decay).add_(contribution, alpha=1 - self.decay)
             corrected_util = state["util"] / correction
-            replaced.append(self.replace(index, incoming, outgoing, state, corrected_mean, corrected_util, optimizer))
-        return replaced
+            selections.append((self.select(state, corrected_util), corrected_mean.clone()))
+        self.apply_replacements(selections, optimizer)
+        return [chosen.numel() for chosen, _ in selections]
+
+    def select(self, state, corrected_util):
+        eligible = torch.nonzero(state["age"] > self.maturity, as_tuple=False).flatten()
+        state["accumulator"] += self.rate * float(eligible.numel())
+        count = min(int(state["accumulator"]), eligible.numel())
+        state["accumulator"] -= count
+        return eligible[torch.argsort(corrected_util[eligible], stable=True)[:count]]
+
+    @torch.no_grad()
+    def apply_replacements(self, selections, optimizer):
+        # Capture every compensation before any layer is changed.
+        corrections = []
+        for (_, outgoing), (chosen, mean) in zip(self.pairs, selections):
+            corrections.append((outgoing.weight[:, chosen] * mean[chosen]).sum(dim=1) if chosen.numel() else None)
+        for (incoming, outgoing), (chosen, _), correction in zip(self.pairs, selections, corrections):
+            if not chosen.numel():
+                continue
+            outgoing.bias.add_(correction)
+        for (incoming, _), (chosen, _) in zip(self.pairs, selections):
+            if not chosen.numel():
+                continue
+            bound = 1.0 / math.sqrt(incoming.in_features)
+            incoming.weight[chosen] = torch.empty((chosen.numel(), incoming.in_features), device=incoming.weight.device).uniform_(-bound, bound, generator=self.generator)
+            incoming.bias[chosen] = 0
+        # Zero columns last: a downstream row reset must never resurrect them.
+        for index, ((incoming, outgoing), (chosen, _)) in enumerate(zip(self.pairs, selections)):
+            if not chosen.numel():
+                continue
+            outgoing.weight[:, chosen] = 0
+            for key in ("util", "mean_act", "age"):
+                self.state[index][key][chosen] = 0
+            if isinstance(optimizer, AdamCBP):
+                optimizer.reset_unit(incoming, chosen, axis=0)
+                optimizer.reset_unit(outgoing, chosen, axis=1)
+            self.replacements += chosen.numel()
 
     @torch.no_grad()
     def replace(self, index, incoming, outgoing, state, corrected_mean, corrected_util, optimizer):
-        eligible = torch.nonzero(state["age"] > self.maturity, as_tuple=False).flatten()
-        state["accumulator"] += self.rate * float(eligible.numel())
-        # Clamp to what is mature, and keep the remainder pending rather than dropping it.
-        count = min(int(state["accumulator"]), eligible.numel())
-        state["accumulator"] -= count
-        if count <= 0:
-            return 0
-        chosen = eligible[torch.argsort(corrected_util[eligible])[:count]]
-        bound = 1.0 / math.sqrt(incoming.in_features)
-        for unit in chosen.tolist():
-            # Fold the unit's mean contribution into the next bias so deleting it shifts no output.
-            outgoing.bias.add_(outgoing.weight[:, unit] * corrected_mean[unit])
-            incoming.weight[unit, :] = torch.empty(incoming.in_features, device=incoming.weight.device).uniform_(-bound, bound, generator=self.generator)
-            incoming.bias[unit] = 0.0
-            outgoing.weight[:, unit] = 0.0
-            state["util"][unit] = 0.0
-            state["mean_act"][unit] = 0.0
-            state["age"][unit] = 0.0
-            if isinstance(optimizer, AdamCBP):
-                optimizer.reset_unit(incoming, unit, axis=0)
-                optimizer.reset_unit(outgoing, unit, axis=1)
-        self.replacements += count
-        return count
+        chosen = self.select(state, corrected_util)
+        selections = [(torch.empty(0, dtype=torch.long, device=incoming.weight.device), None) for _ in self.pairs]
+        selections[index] = (chosen, corrected_mean)
+        self.apply_replacements(selections, optimizer)
+        return chosen.numel()
 
     @torch.no_grad()
     def statistics(self):
@@ -155,5 +178,6 @@ def plasticity(network, features, dead_threshold):
         strength = batch.abs().mean(dim=0)
         report[f"dead_fraction_{index}"] = float((strength <= dead_threshold * strength.mean()).float().mean())
         values = torch.linalg.svdvals(batch - batch.mean(dim=0))
-        report[f"stable_rank_{index}"] = float(values.sum() ** 2 / (values.square().sum() + 1e-12))
+        report[f"stable_rank_{index}"] = float(values.square().sum() / (values[0].square() + 1e-12))
+        report[f"singular_value_participation_ratio_{index}"] = float(values.sum() ** 2 / (values.square().sum() + 1e-12))
     return report

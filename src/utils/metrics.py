@@ -4,9 +4,17 @@ import numpy as np
 
 
 def area_under_curve(curve, block):
-    """Riemann average of one block's greedy evaluations, warmup included: FT shows there."""
-    points = [row["normalized"] for row in curve if row["block"] == block]
-    return float(np.mean(points)) if points else None
+    """Time-normalized trapezoidal integral, retaining legacy records without step coordinates."""
+    points = [row for row in curve if row["block"] == block]
+    if not points:
+        return None
+    values = [row["normalized"] for row in points]
+    if len(points) == 1 or "block_steps" not in points[0]:
+        return float(np.mean(values))
+    steps = np.array([row["block_steps"] for row in points])
+    if np.any(np.diff(steps) <= 0):
+        raise ValueError("AUC steps must increase within a block")
+    return float(np.trapezoid(values, steps) / (steps[-1] - steps[0]))
 
 
 def final_row(matrix):

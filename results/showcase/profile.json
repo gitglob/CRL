@@ -1,0 +1,24 @@
+{
+  "selected_workers": 4,
+  "measurements": [
+    {
+      "workers": 1,
+      "seconds": 40.61797094345093,
+      "transitions_per_second": 4235.366661705137,
+      "allocated_gpu_peak_bytes": 22831616
+    },
+    {
+      "workers": 2,
+      "seconds": 40.42122197151184,
+      "transitions_per_second": 6510.639390998029,
+      "allocated_gpu_peak_bytes": 45675520
+    },
+    {
+      "workers": 4,
+      "seconds": 40.234906911849976,
+      "transitions_per_second": 8621.369517766598,
+      "allocated_gpu_peak_bytes": 90958848
+    }
+  ],
+  "memory_headroom_fraction": 0.2
+}
