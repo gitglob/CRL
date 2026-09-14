@@ -1,0 +1,35 @@
+{
+  "schema": 1,
+  "arm": "scratch",
+  "suite": "minatar",
+  "seed": 0,
+  "blocks": [
+    "space_invaders",
+    "space_invaders",
+    "space_invaders",
+    "space_invaders",
+    "space_invaders"
+  ],
+  "completed_blocks": 5,
+  "env_steps": 2499840,
+  "attempted_env_steps": 2499840,
+  "planned_steps": 2499840,
+  "status": "complete",
+  "seconds": 740.7883336544037,
+  "updates": 9765,
+  "transitions_per_second": 3374.567182595829,
+  "gpu_peak_bytes": 35667456,
+  "probe_checkpoint_blocks": {},
+  "plasticity_metrics": {
+    "schema": 1,
+    "window_steps": 1000,
+    "period": 1000,
+    "rank_period": 10000,
+    "source": "fresh interaction activations",
+    "ordering": "timestep then environment index",
+    "centered": false,
+    "stable_rank": "smallest rank containing at least 99% of singular-value mass",
+    "dormant": "active on at most 1% of observations, pooled over hidden units",
+    "weights": "per-linear-layer mean absolute weight, excluding bias"
+  }
+}

@@ -1,0 +1,23 @@
+{
+  "initial": {
+    "file": "initial.pt",
+    "completed_blocks": 0,
+    "env_steps": 0,
+    "source": "tmp/stability-plasticity/checkpoints/finetune/block_0000.pt",
+    "source_sha256": "cec004a6c1de3ca0bacf4e31a3cea6aabda9d7d9d8f9c1ea8dbc4d0c380cd19e"
+  },
+  "midpoint": {
+    "file": "midpoint.pt",
+    "completed_blocks": 7,
+    "env_steps": 3499776,
+    "source": "tmp/stability-plasticity/checkpoints/finetune/block_0007.pt",
+    "source_sha256": "f3d609fd67434cdc02f3b47e9882ed8bad01359a05472de79e51b7c507ac5e60"
+  },
+  "final": {
+    "file": "final.pt",
+    "completed_blocks": 15,
+    "env_steps": 7499520,
+    "source": "tmp/stability-plasticity/checkpoints/finetune/block_0015.pt",
+    "source_sha256": "0e6e137742c063c1dbabc072faf8b11e991379c9d14974548e2af9d639e47f7c"
+  }
+}

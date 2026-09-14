@@ -27,18 +27,62 @@ class FeatureProbe:
 
 
 @torch.no_grad()
-def plasticity(network, features, dead_threshold):
-    """Weight and feature-rank diagnostics, so a null CBP result can still be interpreted."""
-    report = {}
-    for index, module in enumerate(m for m in network if isinstance(m, nn.Linear)):
-        report[f"weight_norm_{index}"] = float(module.weight.norm())
-        report[f"bias_norm_{index}"] = float(module.bias.norm())
-    for index, batch in enumerate(features):
-        if batch is None or batch.shape[0] < 2:
-            continue
-        strength = batch.abs().mean(dim=0)
-        report[f"dead_fraction_{index}"] = float((strength <= dead_threshold * strength.mean()).float().mean())
-        values = torch.linalg.svdvals(batch - batch.mean(dim=0))
-        report[f"stable_rank_{index}"] = float(values.square().sum() / (values[0].square() + 1e-12))
-        report[f"singular_value_participation_ratio_{index}"] = float(values.sum() ** 2 / (values.square().sum() + 1e-12))
+def plasticity(network, features, include_rank=True):
+    """Dohare PPO diagnostics on uncentered interaction activations, extended to either network."""
+    report = {f"weight_magnitude_{i}": float(layer.weight.abs().mean())
+              for i, layer in enumerate(m for m in network if isinstance(m, nn.Linear))}
+    dormant = sum(int(((batch > 0).sum(dim=0) <= 0.01 * len(batch)).sum()) for batch in features)
+    report["dormant_percent"] = 100 * dormant / sum(batch.shape[1] for batch in features)
+    if include_rank:
+        singular = torch.linalg.svdvals(features[-1].float())
+        total = singular.sum()
+        rank = int(torch.searchsorted(singular.cumsum(0), 0.99 * total)) + 1 if total > 0 else 0
+        report["stable_rank"] = rank
+        report["stable_rank_percent"] = 100 * rank / features[-1].shape[1]
     return report
+
+
+class InteractionDiagnostics:
+    """Bounded activation windows and exact diagnostic clocks across fresh vector transitions."""
+
+    def __init__(self, networks, settings=None):
+        settings = settings or {}
+        self.window = settings.get("window_steps", 1000)
+        self.period = settings.get("period", 1000)
+        self.rank_period = settings.get("rank_period", 10000)
+        self.networks = networks
+        self.buffers = [[torch.empty(self.window, layer.out_features)
+                         for layer in list(net)[0:-1:2]] for net in networks]
+        self.steps = 0
+        self.rows = []
+
+    def metadata(self):
+        return {"schema": 1, "window_steps": self.window, "period": self.period,
+                "rank_period": self.rank_period, "source": "fresh interaction activations",
+                "ordering": "timestep then environment index", "centered": False,
+                "stable_rank": "smallest rank containing at least 99% of singular-value mass",
+                "dormant": "active on at most 1% of observations, pooled over hidden units",
+                "weights": "per-linear-layer mean absolute weight, excluding bias"}
+
+    @torch.no_grad()
+    def observe(self, features):
+        features = [[batch.detach().cpu() for batch in network] for network in features]
+        start, count = 0, len(features[0][0])
+        while start < count:
+            position = self.steps % self.window
+            size = min(count - start, self.window - position, self.period - self.steps % self.period)
+            for buffers, batches in zip(self.buffers, features):
+                for buffer, batch in zip(buffers, batches):
+                    buffer[position:position + size].copy_(batch[start:start + size])
+            self.steps += size
+            start += size
+            if self.steps >= self.window and self.steps % self.period == 0:
+                row = {"env_steps": self.steps}
+                for name, network, buffers in zip(("actor", "critic"), self.networks, self.buffers):
+                    values = plasticity(network, buffers, self.steps % self.rank_period == 0)
+                    row.update({f"{name}_{key}": value for key, value in values.items()})
+                self.rows.append(row)
+
+    def drain(self):
+        rows, self.rows = self.rows, []
+        return rows

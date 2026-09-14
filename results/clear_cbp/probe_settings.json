@@ -1,0 +1,56 @@
+{
+  "initial": {
+    "asterix": {
+      "hidden_sizes": [
+        256,
+        256
+      ],
+      "learning_rate": 0.001,
+      "gamma": 0.99,
+      "gradient_clip": 1.0,
+      "unroll_length": 16,
+      "batch_unrolls": 16,
+      "num_envs": 16,
+      "block_steps": 499968,
+      "probe_steps": 5242880,
+      "value_weight": 0.5,
+      "entropy_weight": 0.005
+    }
+  },
+  "midpoint": {
+    "asterix": {
+      "hidden_sizes": [
+        256,
+        256
+      ],
+      "learning_rate": 0.001,
+      "gamma": 0.99,
+      "gradient_clip": 1.0,
+      "unroll_length": 16,
+      "batch_unrolls": 16,
+      "num_envs": 16,
+      "block_steps": 499968,
+      "probe_steps": 5242880,
+      "value_weight": 0.5,
+      "entropy_weight": 0.005
+    }
+  },
+  "final": {
+    "asterix": {
+      "hidden_sizes": [
+        256,
+        256
+      ],
+      "learning_rate": 0.001,
+      "gamma": 0.99,
+      "gradient_clip": 1.0,
+      "unroll_length": 16,
+      "batch_unrolls": 16,
+      "num_envs": 16,
+      "block_steps": 499968,
+      "probe_steps": 5242880,
+      "value_weight": 0.5,
+      "entropy_weight": 0.005
+    }
+  }
+}

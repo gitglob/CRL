@@ -1,7 +1,6 @@
-experiment: showcase
+experiment: stability-plasticity
 seed: 0
 suite: minatar
-max_seconds: 3600
 output: results
 workers: auto
 arms:
@@ -10,7 +9,7 @@ arms:
 - replay
 - clear
 - clear_cbp
-cycles: 20
+cycles: 5
 device: cuda
 smoke: false
 train:
@@ -23,8 +22,8 @@ train:
   unroll_length: 16
   batch_unrolls: 16
   num_envs: 16
-  block_steps: 32768
-  probe_steps: 32768
+  block_steps: 499968
+  probe_steps: 524288
   value_weight: 0.5
   entropy_weight: 0.005
 clear:
@@ -37,11 +36,13 @@ cbp:
   replacement_rate: 0.0001
   maturity_threshold: 1000
   decay_rate: 0.99
-  dead_threshold: 0.025
+diagnostics:
+  window_steps: 1000
+  period: 1000
+  rank_period: 10000
 eval:
-  episodes: 5
-  points_per_block: 4
-  fixed_observations: 256
+  episodes: 10
+  period: 25000
   clips: true
   clip_stride: 4
-workspace: tmp/showcase
+workspace: tmp/stability-plasticity

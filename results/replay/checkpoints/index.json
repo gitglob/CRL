@@ -1,0 +1,23 @@
+{
+  "initial": {
+    "file": "initial.pt",
+    "completed_blocks": 0,
+    "env_steps": 0,
+    "source": "tmp/stability-plasticity/checkpoints/replay/block_0000.pt",
+    "source_sha256": "cec004a6c1de3ca0bacf4e31a3cea6aabda9d7d9d8f9c1ea8dbc4d0c380cd19e"
+  },
+  "midpoint": {
+    "file": "midpoint.pt",
+    "completed_blocks": 7,
+    "env_steps": 3499776,
+    "source": "tmp/stability-plasticity/checkpoints/replay/block_0007.pt",
+    "source_sha256": "7267e069cc5c9bbcd32c011bbb2a50ea2fff6a7b5ea16614f0c2c94f2fdbd9c8"
+  },
+  "final": {
+    "file": "final.pt",
+    "completed_blocks": 15,
+    "env_steps": 7499520,
+    "source": "tmp/stability-plasticity/checkpoints/replay/block_0015.pt",
+    "source_sha256": "0efc57c72cda86ed168b88f2f645e5c721838fbc3f31e6a6e2ea8c4014766a31"
+  }
+}

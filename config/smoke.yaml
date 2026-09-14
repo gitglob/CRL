@@ -13,4 +13,7 @@ cbp:
 eval:
   episodes: 1
   period: 256
-  fixed_observations: 32
+diagnostics:
+  window_steps: 32
+  period: 32
+  rank_period: 256

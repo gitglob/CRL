@@ -1,0 +1,471 @@
+{
+  "reference": "lr001_5m",
+  "started_at": 1789298362.6593432,
+  "config": {
+    "experiment": "stability-plasticity",
+    "seed": 0,
+    "suite": "minatar",
+    "output": "results",
+    "workers": "auto",
+    "arms": [
+      "finetune",
+      "cbp",
+      "replay",
+      "clear",
+      "clear_cbp"
+    ],
+    "cycles": 5,
+    "device": "cuda",
+    "smoke": false,
+    "train": {
+      "hidden_sizes": [
+        256,
+        256
+      ],
+      "learning_rate": 0.0003,
+      "gamma": 0.99,
+      "gradient_clip": 1.0,
+      "unroll_length": 16,
+      "batch_unrolls": 16,
+      "num_envs": 16,
+      "block_steps": 499968,
+      "probe_steps": 5242880,
+      "value_weight": 0.5,
+      "entropy_weight": 0.005
+    },
+    "probe_train": {
+      "learning_rate": 0.001,
+      "gamma": 0.99,
+      "entropy_weight": 0.005
+    },
+    "clear": {
+      "replay_ratio": 0.5,
+      "capacity": 100000,
+      "policy_cloning_weight": 0.01,
+      "value_cloning_weight": 0.005
+    },
+    "cbp": {
+      "utility": "contribution",
+      "replacement_rate": 0.0001,
+      "maturity_threshold": 1000,
+      "decay_rate": 0.99
+    },
+    "diagnostics": {
+      "window_steps": 1000,
+      "period": 1000,
+      "rank_period": 10000
+    },
+    "eval": {
+      "episodes": 10,
+      "period": 25000,
+      "clips": true,
+      "clip_stride": 4
+    }
+  },
+  "reference_source": {
+    "checkpoint": "tmp/stability-plasticity/checkpoints/finetune/block_0000.pt",
+    "sha256": "cec004a6c1de3ca0bacf4e31a3cea6aabda9d7d9d8f9c1ea8dbc4d0c380cd19e"
+  },
+  "tuning_trials": {
+    "lr001": {
+      "train_settings": {
+        "hidden_sizes": [
+          256,
+          256
+        ],
+        "learning_rate": 0.001,
+        "gamma": 0.99,
+        "gradient_clip": 1.0,
+        "unroll_length": 16,
+        "batch_unrolls": 16,
+        "num_envs": 16,
+        "block_steps": 499968,
+        "probe_steps": 524288,
+        "value_weight": 0.5,
+        "entropy_weight": 0.005
+      },
+      "transitions": 2097152,
+      "episodes": 25322,
+      "first1000": {
+        "mean_return": 0.521,
+        "zero_fraction": 0.647
+      },
+      "last1000": {
+        "mean_return": 1.929,
+        "zero_fraction": 0.276
+      }
+    },
+    "lr001_5m": {
+      "train_settings": {
+        "hidden_sizes": [
+          256,
+          256
+        ],
+        "learning_rate": 0.001,
+        "gamma": 0.99,
+        "gradient_clip": 1.0,
+        "unroll_length": 16,
+        "batch_unrolls": 16,
+        "num_envs": 16,
+        "block_steps": 499968,
+        "probe_steps": 524288,
+        "value_weight": 0.5,
+        "entropy_weight": 0.005,
+        "tuning_steps": 5242880
+      },
+      "transitions": 5242880,
+      "episodes": 49989,
+      "first1000": {
+        "mean_return": 0.521,
+        "zero_fraction": 0.647
+      },
+      "last1000": {
+        "mean_return": 4.916,
+        "zero_fraction": 0.116
+      }
+    },
+    "lr001_entropy02": {
+      "train_settings": {
+        "hidden_sizes": [
+          256,
+          256
+        ],
+        "learning_rate": 0.001,
+        "gamma": 0.99,
+        "gradient_clip": 1.0,
+        "unroll_length": 16,
+        "batch_unrolls": 16,
+        "num_envs": 16,
+        "block_steps": 499968,
+        "probe_steps": 524288,
+        "value_weight": 0.5,
+        "entropy_weight": 0.02
+      },
+      "transitions": 2097152,
+      "episodes": 25915,
+      "first1000": {
+        "mean_return": 0.47,
+        "zero_fraction": 0.674
+      },
+      "last1000": {
+        "mean_return": 2.029,
+        "zero_fraction": 0.282
+      }
+    },
+    "lr001_gamma095_5m": {
+      "train_settings": {
+        "hidden_sizes": [
+          256,
+          256
+        ],
+        "learning_rate": 0.001,
+        "gamma": 0.95,
+        "gradient_clip": 1.0,
+        "unroll_length": 16,
+        "batch_unrolls": 16,
+        "num_envs": 16,
+        "block_steps": 499968,
+        "probe_steps": 524288,
+        "value_weight": 0.5,
+        "entropy_weight": 0.005,
+        "tuning_steps": 5242880
+      },
+      "transitions": 5242880,
+      "episodes": 55239,
+      "first1000": {
+        "mean_return": 0.557,
+        "zero_fraction": 0.646
+      },
+      "last1000": {
+        "mean_return": 3.931,
+        "zero_fraction": 0.123
+      }
+    },
+    "lr001_gamma09_5m": {
+      "train_settings": {
+        "hidden_sizes": [
+          256,
+          256
+        ],
+        "learning_rate": 0.001,
+        "gamma": 0.9,
+        "gradient_clip": 1.0,
+        "unroll_length": 16,
+        "batch_unrolls": 16,
+        "num_envs": 16,
+        "block_steps": 499968,
+        "probe_steps": 524288,
+        "value_weight": 0.5,
+        "entropy_weight": 0.005,
+        "tuning_steps": 5242880
+      },
+      "transitions": 5242880,
+      "episodes": 62540,
+      "first1000": {
+        "mean_return": 0.513,
+        "zero_fraction": 0.645
+      },
+      "last1000": {
+        "mean_return": 3.071,
+        "zero_fraction": 0.171
+      }
+    },
+    "lr003_entropy01": {
+      "train_settings": {
+        "hidden_sizes": [
+          256,
+          256
+        ],
+        "learning_rate": 0.003,
+        "gamma": 0.99,
+        "gradient_clip": 1.0,
+        "unroll_length": 16,
+        "batch_unrolls": 16,
+        "num_envs": 16,
+        "block_steps": 499968,
+        "probe_steps": 524288,
+        "value_weight": 0.5,
+        "entropy_weight": 0.01
+      },
+      "transitions": 2097152,
+      "episodes": 26481,
+      "first1000": {
+        "mean_return": 0.509,
+        "zero_fraction": 0.667
+      },
+      "last1000": {
+        "mean_return": 1.414,
+        "zero_fraction": 0.381
+      }
+    },
+    "original_5m": {
+      "train_settings": {
+        "hidden_sizes": [
+          256,
+          256
+        ],
+        "learning_rate": 0.0003,
+        "gamma": 0.99,
+        "gradient_clip": 1.0,
+        "unroll_length": 16,
+        "batch_unrolls": 16,
+        "num_envs": 16,
+        "block_steps": 499968,
+        "probe_steps": 524288,
+        "value_weight": 0.5,
+        "entropy_weight": 0.005,
+        "tuning_steps": 5242880
+      },
+      "transitions": 5242880,
+      "episodes": 51965,
+      "first1000": {
+        "mean_return": 0.492,
+        "zero_fraction": 0.675
+      },
+      "last1000": {
+        "mean_return": 4.398,
+        "zero_fraction": 0.129
+      }
+    },
+    "original_long": {
+      "train_settings": {
+        "hidden_sizes": [
+          256,
+          256
+        ],
+        "learning_rate": 0.0003,
+        "gamma": 0.99,
+        "gradient_clip": 1.0,
+        "unroll_length": 16,
+        "batch_unrolls": 16,
+        "num_envs": 16,
+        "block_steps": 499968,
+        "probe_steps": 524288,
+        "value_weight": 0.5,
+        "entropy_weight": 0.005
+      },
+      "transitions": 2097152,
+      "episodes": 25885,
+      "first1000": {
+        "mean_return": 0.492,
+        "zero_fraction": 0.675
+      },
+      "last1000": {
+        "mean_return": 1.88,
+        "zero_fraction": 0.262
+      }
+    }
+  },
+  "source_checkpoints": {
+    "refresh_finetune_midpoint": {
+      "checkpoint": "tmp/stability-plasticity/checkpoints/finetune/block_0007.pt",
+      "sha256": "f3d609fd67434cdc02f3b47e9882ed8bad01359a05472de79e51b7c507ac5e60",
+      "block": 7
+    },
+    "refresh_finetune_final": {
+      "checkpoint": "tmp/stability-plasticity/checkpoints/finetune/block_0015.pt",
+      "sha256": "0e6e137742c063c1dbabc072faf8b11e991379c9d14974548e2af9d639e47f7c",
+      "block": 15
+    },
+    "refresh_cbp_midpoint": {
+      "checkpoint": "tmp/stability-plasticity/checkpoints/cbp/block_0007.pt",
+      "sha256": "42590af19692d462046d96e360168c6272be886a0a69fd92fd5d66bb30e9786e",
+      "block": 7
+    },
+    "refresh_cbp_final": {
+      "checkpoint": "tmp/stability-plasticity/checkpoints/cbp/block_0015.pt",
+      "sha256": "e8cc6d7a57cdf1b7b041105d187ff57563a55aefa007a4cac591ecbdb0afcefa",
+      "block": 15
+    },
+    "refresh_clear_midpoint": {
+      "checkpoint": "tmp/stability-plasticity/checkpoints/clear/block_0007.pt",
+      "sha256": "7766bc3ed4808cb871ef0c189c974ae52273d78379819ae0d09998f2351bb1c8",
+      "block": 7
+    },
+    "refresh_clear_final": {
+      "checkpoint": "tmp/stability-plasticity/checkpoints/clear/block_0015.pt",
+      "sha256": "50d2e1dd1cb92010dc456d6e07c857a4500648f40abca60a00251bac57e23688",
+      "block": 15
+    },
+    "refresh_clear_cbp_midpoint": {
+      "checkpoint": "tmp/stability-plasticity/checkpoints/clear_cbp/block_0007.pt",
+      "sha256": "885ca2b4a3906cbe8af27fc244f027a9ec4d404e189c05c8bab97663e63c9289",
+      "block": 7
+    },
+    "refresh_clear_cbp_final": {
+      "checkpoint": "tmp/stability-plasticity/checkpoints/clear_cbp/block_0015.pt",
+      "sha256": "e74fbc32fdfad65582a142b0b229f05ca9dd9e7e5dbd38524d5f840793071341",
+      "block": 15
+    }
+  },
+  "preserved_hashes": {
+    "results/config.yaml": "ed7b26e27c80b780d57a107dcc2ce326347e3c54d93df37a10f5d940a42c586d",
+    "results/baseline.png": "5732c64170c685f3b768965c482568686aed4a3215f39c97c7984e7805ef5830",
+    "results/performance.png": "2be5a840916c6b976367d21fc2e6128e6542a2fc3a22b739bd5b5e971666f763",
+    "results/audit.json": "cecd765777ecc2da5f302182f7412462f76c319c962bff008c52216c63dbe374",
+    "results/summary.csv": "67eee9fa60175b5182e21f5f1adf4d97c0f1c0f6916d245fc8a697397652512d",
+    "results/plasticity.png": "6686af223e4777918053fa17d4cc3ed853aa1d290e0249bcbb30b5d13c042324",
+    "results/retention.csv": "79ee5ef4825ced46506ad0a9bf03ddb5e5e17484c03a5f4513a3effa899b486b",
+    "results/clear/diagnostics.csv": "95e5d29688f7756d3da9e1d04b3e28ad108e88b8af32ef5b97a8df3c8c0364ab",
+    "results/clear/evaluations.csv": "f54391ade190d03804a97dfe85176a49a6272ae2eed7c6b4562a7bca710fbe36",
+    "results/clear/plasticity.csv": "a3a5b31e15f1cc289c0860f629be6297f3b70bd1fb0be7fcfd20e5575fb16f01",
+    "results/clear/config.yaml": "ed7b26e27c80b780d57a107dcc2ce326347e3c54d93df37a10f5d940a42c586d",
+    "results/clear/run.json": "90f904050429366659e0c82d19998d1576b3446a3309ee7acaee00328e1e1e77",
+    "results/clear/episodes.csv": "70a3e2a1f4e104c9dad876ccd654f9e6e5a2a0094032896e07dd664d2dc1c949",
+    "results/clear/blocks.csv": "1e642b4b0367735e9e58e280310d6de322d4914349f4d86fd170ccaa52f16ede",
+    "results/clear/model.pt": "6bf15c3096870d72afc125c55b767ba67cb95c27e22c14b40e553d65a8eeea2e",
+    "results/clear/videos/freeway.gif": "f1581cf61e5d46e011237fbac9e4450a6ccc5b9bbad46e61c9a11feb4f3b1110",
+    "results/clear/videos/space_invaders.gif": "1ac659ba239847b68b3e9eedf78316b52268c32fb1ee06adc0c491350f4b3abb",
+    "results/clear/videos/breakout.gif": "aff3331497cbcb9c6535861a27c7457661e4ceecd4f41ece648eebdcd995df3f",
+    "results/multitask/diagnostics.csv": "fa6e0d4410249530004928bdb8a704c858fde3869019e2f9ccfb35585ce040dd",
+    "results/multitask/evaluations.csv": "565751bf22ce290f937631f5e35a45e8f046c996762526af8790951efb4b9e27",
+    "results/multitask/plasticity.csv": "431808bdae5d715976eeb66155878ce0bee92b9e4a5ad0d0485dc502b22bedbf",
+    "results/multitask/config.yaml": "ed7b26e27c80b780d57a107dcc2ce326347e3c54d93df37a10f5d940a42c586d",
+    "results/multitask/run.json": "fdf102e692c8b86abd0f126874dca6ce06b9331946ec89cf76442459d0f1874e",
+    "results/multitask/episodes.csv": "7bc12352f0ddf587542ae1d431c99d785819cd34b40dc9ba3054328f55005980",
+    "results/multitask/blocks.csv": "e48e60fc393bd770df5789c729cbebceffc213303db215c09e06ec7982dcb214",
+    "results/multitask/model.pt": "f999cff65ebfd148c7c8bc38c4a563af847bdc18f538a11ebddcb94e893ef8d3",
+    "results/multitask/videos/freeway.gif": "68f4c2d4296ea993c30dda8a80e9b1f5f1bb321d2762684d66595e240509ab29",
+    "results/multitask/videos/space_invaders.gif": "e5caed162f1408636ce912131fa52feba82908f1d0f0fe2d02f1d5efb33848b6",
+    "results/multitask/videos/breakout.gif": "8e0694821ba60fd0cb32b33ad9f71580c6f707a50acd2683652f7d5b5e5181c7",
+    "results/replay/diagnostics.csv": "86584a5c116071408901fa4e98af420805a8c0aeaf945fe83793cc14ca611e1f",
+    "results/replay/evaluations.csv": "61e5eb0a85b32ec3ad10ae937817fb7578128b374adb2404e39d430eb7bf0d7a",
+    "results/replay/plasticity.csv": "e06d8667b8ec7280c771413ae4fb44eaf49a1512ddf41470f3bcc93e900befc1",
+    "results/replay/config.yaml": "ed7b26e27c80b780d57a107dcc2ce326347e3c54d93df37a10f5d940a42c586d",
+    "results/replay/run.json": "b99a2b25fea76862327aae85c6d1774be9031186c44beda3e97158aaeb6d2cff",
+    "results/replay/episodes.csv": "fffa39c8ddbad03df9155e766c8063534b7e03e3e5122dab5999edeeec99685b",
+    "results/replay/blocks.csv": "9b7bd5f910d1ccb90997daeee580f40b67cab5af6e17e9e8f1decc42353fe0af",
+    "results/replay/model.pt": "a3c9d9c4696084b97f2ef5d9e6d4b78fb12346d79317d9b5419e8e4bc72ca5d7",
+    "results/replay/videos/freeway.gif": "14b20f80cf2304c0c3b83d93f97ba316ba0df2d86594215f47ccdd50b886fcc2",
+    "results/replay/videos/space_invaders.gif": "01ae60929c029cebfd103c59e2c4cdde2d5278653b768ee0ed537cfb6582859f",
+    "results/replay/videos/breakout.gif": "d4c48a1d880a52c9236706afee9e2a4c86d8602924dc8fef23d409d63cad23df",
+    "results/finetune/diagnostics.csv": "90d1929cde01d827f337ce4cfbb9135da0796eb868c239b35dfe112e916af892",
+    "results/finetune/evaluations.csv": "4541b8cdaf51c770ed6eded5faaacabf9978e3b86e4f5079874782bdaceb7e30",
+    "results/finetune/plasticity.csv": "5ca04bafeb089246c252d76c4431ec427a2cf3f4e529ca60f88d0954e5a25adb",
+    "results/finetune/config.yaml": "ed7b26e27c80b780d57a107dcc2ce326347e3c54d93df37a10f5d940a42c586d",
+    "results/finetune/run.json": "21bcf23a04993e70a303d80cba42e482e3ba21a4df9d4c607603f6cc6cc90a3d",
+    "results/finetune/episodes.csv": "5b89734724a5b0854c10216c5f7d972411f9b8aa56568e56d1ba23a789e5e4cd",
+    "results/finetune/blocks.csv": "2d4121c3897281dfe17e309f59ee8cd0da22064574b13d21fd06b06909f2fab7",
+    "results/finetune/model.pt": "84f827f5bfd6655c69341e8c8a95fb42a5a614da84e748129d78791da6e5b55b",
+    "results/finetune/videos/freeway.gif": "79c34aa8248d5834dc6067a1d1e3a51c2a2cc18a4e6e22db32154bda8663c6f0",
+    "results/finetune/videos/space_invaders.gif": "3bed74c7c9a44c38a39261f145d2dc88e7a1d39acba3f87f86ab6b6db8e5e3d3",
+    "results/finetune/videos/breakout.gif": "f62870d97592c82bf0bfa0dd4990e70c613162e95f670e72b542812cc9a7277b",
+    "results/cbp/diagnostics.csv": "e16410478242d7fe8868d3581a124cc2adc95037af3d10ea6d42e03e5c998149",
+    "results/cbp/evaluations.csv": "d421b80681a6c6590deb57c63d468f344ed0af9b4f3ea0e4857aa5e2392ad95a",
+    "results/cbp/plasticity.csv": "8a02dd1248199ccf0840787253abfa4d07e3f3d83e7b32db65853ebf0c60b1b7",
+    "results/cbp/config.yaml": "ed7b26e27c80b780d57a107dcc2ce326347e3c54d93df37a10f5d940a42c586d",
+    "results/cbp/run.json": "73484076c9a6f4502358c312c2f3263de88b1fb4918fde5d66d5c148d6b100c9",
+    "results/cbp/episodes.csv": "f3de20664ed3fd6136d29f1c1b20aa7d043da57bb237dfb54296bc9610935db0",
+    "results/cbp/blocks.csv": "4510c67b06da9d4c08caf3305105ff38446e5342601a9029d98eed7086aa6d3f",
+    "results/cbp/model.pt": "ef33579c2d845a2d806c2d33bdcb5059d5edadf201dcceda4f9ce4d5b983f16c",
+    "results/cbp/videos/freeway.gif": "8400c47c2fb5f4e5acfe8036d7465a531bbcbc2ee737f8b22ce6dafdd4ed75c9",
+    "results/cbp/videos/space_invaders.gif": "25276e18fc8942a70d434da2d5b275bca6c2c7e7cc28addcb5eaf57407be2271",
+    "results/cbp/videos/breakout.gif": "b4e790fa6bede77555baa1f9711743ecee93cc6695b63220a325b5b74dabc4f3",
+    "results/scratch/space_invaders/diagnostics.csv": "d33bce3bfd6f386960392ff02104d502d6d5a32e2cc50b7cfb92d63496796580",
+    "results/scratch/space_invaders/evaluations.csv": "a2f02998db8e2233ad39074f968ac46d8bdb4347132c5738262f1a6fe46437b3",
+    "results/scratch/space_invaders/plasticity.csv": "90979ead5279061694437372d86ced223fa83c13e381049bddcbf0bd7f3d2d43",
+    "results/scratch/space_invaders/config.yaml": "ed7b26e27c80b780d57a107dcc2ce326347e3c54d93df37a10f5d940a42c586d",
+    "results/scratch/space_invaders/run.json": "ba9cb96c889da8c62a34a254411616610cb5706a1aeaf20700e2bf653a79991b",
+    "results/scratch/space_invaders/episodes.csv": "fe68a0e7aed7051ae0f931b160d1f0390d50066a6b81d7578c14266bf94c610d",
+    "results/scratch/space_invaders/blocks.csv": "c5b21e4def4afdefa26332222ad8f1938159be0a80c9bc62bdc2047e22a4e02c",
+    "results/scratch/space_invaders/model.pt": "e2bc381621442680001521ba9a9bd3506d899c9b39db8acc83676bcebbaaeae8",
+    "results/scratch/space_invaders/videos/space_invaders.gif": "e7f5f614bb1dbe9227840f23097010656ab965aae0dcdc40c53c9707872eb6e4",
+    "results/scratch/breakout/diagnostics.csv": "58899e7a0096b6b3914dfc9a6f3eefdbf9270f7f2725e955b1163e48eee23a73",
+    "results/scratch/breakout/evaluations.csv": "388c5ec3a418480193db62ea16e7ad6c7923e31e808721951801b485a77dba55",
+    "results/scratch/breakout/plasticity.csv": "a7ac3e10746d4a481a7f1c837068ce4ff2113972d61fb78878d3f10f206482ac",
+    "results/scratch/breakout/config.yaml": "ed7b26e27c80b780d57a107dcc2ce326347e3c54d93df37a10f5d940a42c586d",
+    "results/scratch/breakout/run.json": "ade9f3cdd83389a7c69522dc7b5a5da462fe1aac09d6fd9b183c293d885c87ca",
+    "results/scratch/breakout/episodes.csv": "792735df85b70ffd00965bdf79384943bb173218405e7d327688df7254360e33",
+    "results/scratch/breakout/blocks.csv": "9c976ab6bb1c29d330537fb0774873fd4004b5a17f1ad9d4e4af51b6bb0259fb",
+    "results/scratch/breakout/model.pt": "906d4c2b586bc3481fe5c1449452d1f9d271bca1777048c8fd5648fa43ec6321",
+    "results/scratch/breakout/videos/breakout.gif": "25fc515132eb7a2d402bfd4e332705a82c5ab6fab4c96aac5fa7c03c815b223c",
+    "results/scratch/freeway/diagnostics.csv": "510a78717a822a0576dbb38ebc303d415e01d284b732fb3e4cd396c565dd96de",
+    "results/scratch/freeway/evaluations.csv": "2bc66822026406430d8b16f23a7bc1a931ca6d90f8a97d4ce255f112f5db9438",
+    "results/scratch/freeway/plasticity.csv": "64993fc39619ca3e170445aace0c8a3e664a67ad2734ff9d4d093b2f58284c9e",
+    "results/scratch/freeway/config.yaml": "ed7b26e27c80b780d57a107dcc2ce326347e3c54d93df37a10f5d940a42c586d",
+    "results/scratch/freeway/run.json": "9e980990cf52d2d083c3f52b0e810c96776b9cb36a384ec9e8e5b7fb20124844",
+    "results/scratch/freeway/episodes.csv": "56f1849be2fab59b107b8175147b4338335b9d250e9b39110919b27680188ebd",
+    "results/scratch/freeway/blocks.csv": "9e4c2b097d19b24cd7ebe4624725fb68b2f27d6ddbb5e8a48661f7e1dc04b524",
+    "results/scratch/freeway/model.pt": "b1ba71f5b5a9d8576375d5dfe121d73f8382982258075217459269372051d366",
+    "results/scratch/freeway/videos/freeway.gif": "0dcc32fd5c71921361e8e4e9b251f07e589aad08cc864607b5aa2280b1e16905",
+    "results/clear_cbp/diagnostics.csv": "33ed3e83b10fea99910f410564779cef51b80d1a45eed7feb1b66324ba0aa143",
+    "results/clear_cbp/evaluations.csv": "868e3335f7865b4881f451ba0e2cb28f761596a65e2f26dd1a4ec6ea9ce19fd4",
+    "results/clear_cbp/plasticity.csv": "e5351b583663ae0e03c6c30eb19a6217c07d951f9e2a51b856786d18f83b777c",
+    "results/clear_cbp/config.yaml": "ed7b26e27c80b780d57a107dcc2ce326347e3c54d93df37a10f5d940a42c586d",
+    "results/clear_cbp/run.json": "75fc97193ff424e311e1dd08ce0902372b840692d123c4c9c7c646f3a82a53e7",
+    "results/clear_cbp/episodes.csv": "dd1a7b71d9421dcb37c0cd6e6e91fd896b936ba6d770aa7f8455fc5cdd4c4b2e",
+    "results/clear_cbp/blocks.csv": "7dcdec7e385a3563a282f6611b11716b07d5ea7312604dcb03a59ddfdfe804a2",
+    "results/clear_cbp/model.pt": "98b37c0d739cd0bea533394ecee622596403643cb7471a6a9d432e6f4f30860f",
+    "results/clear_cbp/videos/freeway.gif": "768d1922ff0362dc8e8f43bfb3e1b930bf9cc7d2d8a017f6ae1273ccf256369e",
+    "results/clear_cbp/videos/space_invaders.gif": "0ad2c47c01305ef1b0ac5120081531fdf7b87fed5ce839b47d02c64f29f188bc",
+    "results/clear_cbp/videos/breakout.gif": "ca7ff92d3b39b629a4a8194dd9e1cf1aa7fd153451086e5c153e69e5d0aa6d31"
+  },
+  "source_hashes": {
+    "src/compare.py": "061d539d58b40efbe71d1169eaf03353cd77ca1ed3ada1a89cf07e7a7b7f3276",
+    "src/study.py": "cdb27cc1680394eef322779b78ff8c018d7e90796cfa11d12bb521b4995f6442",
+    "src/__init__.py": "1981ade054b62c3e13f591ee6fbe36bf8fa9411e5f092a5aafe47385631252c6",
+    "src/clear/__init__.py": "2d874ffcc7cd4d46fbef993b70ba527577b6b9383515c181e7ece8982cc4f2fc",
+    "src/clear/replay.py": "22ef310862a6e97da0d5c7f70d1b90b8099a5d34ae7951e6f6430b3886d13935",
+    "src/clear/learner.py": "12cede1fe52bf0e78bd6ebcfb15945fa6717f16660a2addfaf892194b5cc5f52",
+    "src/cbp/optimizer.py": "aadc885bfaf1fe5098dd63ba2026c63647d84a0d7c7a548bb5b6127b20fe23ee",
+    "src/cbp/__init__.py": "e35bb769509d59a13e94f3749b0eaec9ae0d11bf69dcbc23879abba964b15635",
+    "src/cbp/diagnostics.py": "9b320bb2bc3c41a6f032147ce110c9e99a9802167a22d369d22b4c8cc89e5e95",
+    "src/cbp/algorithm.py": "50014ea7781a4956b157e8b2a47492bf0d0ed37a5a1600c13e47956f864aebe2",
+    "src/utils/compare.py": "5b47b6bd240923f9af05846eb8bee108982e2c4e46aeffbcb6fb5147fc2960b8",
+    "src/utils/config.py": "e55b57897e44066b9d77193f98c6ccd91817529563b9d2430678c9c34befeb2e",
+    "src/utils/io.py": "bc853813c9863f6add364e61248b1c23513fd2f60c51b946eff0c6d635eb4415",
+    "src/utils/study.py": "3b1f801353f71cf9cffc6fae03154f4b6f1830ee2f7fae96a9307634b2a454ae",
+    "src/utils/runtime.py": "4e6a4e63d25c62f3887aa8a6e0f3e6437f24b8d149a9dec12c3c85debe6e7723",
+    "src/utils/envs.py": "fe166a786fc12ca6042ef9afdf1f8d30ae6c958c23ec960574f431488868a57b",
+    "src/utils/__init__.py": "91f8d7cf1d57e2f0d38e6d1fbbbbef7d06e27f1aefb42406d7ee2a568069121e",
+    "src/utils/report.py": "3ea23d4c77fd24c4e78b0f36a77b5260b3125bdca494490d2172602b1e4dd5b5",
+    "tmp/tune_asterix.py": "e86c935bee676c8de83480003937fc0263ab5d62eb5a44fc311876a1ae95e85b",
+    "tmp/refresh_asterix.py": "f8dc76125d2d8f32e693aa369b843edcbc693cdd127312246dbe9b304550c46c"
+  },
+  "status": "complete",
+  "archive": "tmp/asterix_probes_previous_1789353817372612942",
+  "completed_at": 1789353817.3868442,
+  "additional_probe_transitions": 41943040,
+  "reused_reference_transitions": 5242880,
+  "main_training_transitions": 0
+}

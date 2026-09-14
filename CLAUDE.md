@@ -15,6 +15,7 @@ MinAtar Breakout, Space Invaders and Freeway recur; Asterix is held out for prob
 - `src/utils/study.py` — profiling, pilots, qualification gates, job planning, run manifest.
 - `src/utils/report.py` — figures, clips, REPORT.md, audits; `compare.py` — report regeneration.
 - `src/study.py` and `src/compare.py` — thin CLI entry points.
+- `src/probes.py` — isolated probes from named phase checkpoints, without main-task training.
 - `config/study.yaml` and `config/smoke.yaml` — full experiment and pipeline check, by inheritance.
 - `tests/` — `test_cbp.py` numerical, `test_study.py` pipeline, `test_style.py` these limits.
 - `results/` — report, figures, summary, audit, and one directory per run.
@@ -23,7 +24,7 @@ MinAtar Breakout, Space Invaders and Freeway recur; Asterix is held out for prob
 ## Logging
 
 A run directory holds `config.yaml`, `run.json` metadata, and CSV logs: `episodes.csv`,
-`evaluations.csv`, `blocks.csv`, `diagnostics.csv`, `probes.csv`, `probe_summary.csv`.
+`evaluations.csv`, `blocks.csv`, `diagnostics.csv`, `plasticity.csv`, and probe CSVs.
 JSON and YAML carry configuration and metadata; CSV carries logged series.
 Every task is evaluated every `eval.period` environment steps and at each block boundary,
 so post-training scripts can plot against env steps, episodes, or task without re-running.
@@ -59,11 +60,15 @@ Writing into an existing output requires `--overwrite`, which archives it under 
 - Termination disables bootstrap. Truncation bootstraps but must stop the V-trace recursion.
 - Select CBP units in every layer before changing weights; zero outgoing columns last.
 - Probes use isolated weight copies and fresh optimizers, with replay and CBP disabled.
-- Use fixed observations for diagnostics. Stable rank uses squared singular values.
-- A failed qualification gate is inconclusive. Never relabel poor returns as plasticity loss.
+- `probe_train` overrides only probe optimization settings; record them in `probe_settings.json`.
+- Every run retains initial/midpoint/final actor and critic weights in its `checkpoints/` folder.
+- Use fresh interaction windows; rank uses 99% of uncentered singular-value mass.
+- Only probe curves use Gaussian smoothing (sigma 200 episodes); other plots remain unsmoothed.
+- Preserve raw episodes and step coordinates; no downsampling, probe AUC or plasticity gate.
+- Keep pilot checks separate from completion. Normalize against matched main scratch runs.
 - Write metrics, summaries, and checkpoints through a temporary file, then rename.
 - `src.compare` rebuilds the report from saved logs; it never trains or evaluates.
-- Run tests and the smoke pipeline before launching a timed full experiment.
+- Run tests and the smoke pipeline before launching the full experiment.
 - Record incomplete work as incomplete; re-evaluate saved checkpoints before claiming validity.
 - Keep exploratory runs under `tmp/`; `results/` is the single current study.
 - Documentation states the current design only: no past results, no superseded implementations.

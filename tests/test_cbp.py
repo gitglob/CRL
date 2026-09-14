@@ -15,7 +15,7 @@ def generator():
 
 
 def cbp_settings(rate=0.34, maturity=100):
-    return {"replacement_rate": rate, "decay_rate": 0.99, "maturity_threshold": maturity, "dead_threshold": 0.025}
+    return {"replacement_rate": rate, "decay_rate": 0.99, "maturity_threshold": maturity}
 
 
 def make_pair(width=3, inputs=4, outputs=2, seed=0):
@@ -199,7 +199,7 @@ def test_feature_probe_records_only_the_batch_it_is_told_to(generator):
 def test_plasticity_reports_dead_units_and_rank():
     net = mlp(4, [6], 2)
     features = [torch.cat([torch.zeros(8, 3), torch.rand(8, 3) + 1.0], dim=1)]
-    report = plasticity(net, features, 0.025)
-    assert report["dead_fraction_0"] == pytest.approx(0.5)
-    assert report["stable_rank_0"] > 1.0
-    assert report["weight_norm_0"] > 0
+    report = plasticity(net, features)
+    assert report["dormant_percent"] == pytest.approx(50)
+    assert report["stable_rank"] > 1.0
+    assert report["weight_magnitude_0"] > 0

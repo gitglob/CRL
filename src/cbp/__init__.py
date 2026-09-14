@@ -1,5 +1,5 @@
-"""Continual backpropagation, optimizer resets, and fixed-input diagnostics."""
+"""Continual backpropagation, optimizer resets, and interaction diagnostics."""
 
 from .algorithm import ContinualBackprop, attach
-from .diagnostics import FeatureProbe, plasticity
+from .diagnostics import FeatureProbe, InteractionDiagnostics, plasticity
 from .optimizer import AdamCBP

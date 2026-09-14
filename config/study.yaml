@@ -16,8 +16,12 @@ train:
   batch_unrolls: 16
   num_envs: 16
   block_steps: 499968
-  probe_steps: 32768
+  probe_steps: 5242880
   value_weight: 0.5
+  entropy_weight: 0.005
+probe_train:
+  learning_rate: 0.001
+  gamma: 0.99
   entropy_weight: 0.005
 clear:
   replay_ratio: 0.5
@@ -29,10 +33,12 @@ cbp:
   replacement_rate: 0.0001
   maturity_threshold: 1000
   decay_rate: 0.99
-  dead_threshold: 0.025
+diagnostics:
+  window_steps: 1000
+  period: 1000
+  rank_period: 10000
 eval:
   episodes: 10
   period: 25000
-  fixed_observations: 256
   clips: true
   clip_stride: 4

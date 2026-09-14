@@ -137,13 +137,6 @@ def test_cbp_utilities_are_computed_before_any_replacement():
         torch.testing.assert_close(value, original)
 
 
-def test_true_stable_rank_differs_from_singular_value_participation_ratio():
-    features = torch.tensor([[6.0, 3.0], [0.0, 3.0], [3.0, 4.0], [3.0, 2.0]])
-    report = plasticity(mlp(2, [2], 1), [features], 0.025)
-    assert report["stable_rank_0"] == pytest.approx(10 / 9)
-    assert report["singular_value_participation_ratio_0"] == pytest.approx(1.6)
-
-
 @pytest.mark.parametrize("left,right,change", [("finetune", "cbp", "replacement"), ("clear", "clear_cbp", "replacement"), ("finetune", "clear", "replay"), ("replay", "clear", "cloning")])
 def test_disabled_interventions_are_exact_equivalences(config, left, right, change):
     if change == "replacement":
@@ -172,10 +165,9 @@ def test_probe_training_and_diagnostics_leave_parent_unchanged(config):
     learn_rollout(agent, collector.collect(float("inf")))
     collector.close()
     before = deepcopy(agent.checkpoint())
-    fixed = fixed_observations("minatar", 32)
-    first = agent.diagnostics(fixed)
+    first = agent.diagnostics()
     probe_tasks(agent, time.time() + 20, "test")
-    second = agent.diagnostics(fixed)
+    second = agent.diagnostics()
     assert first == second
     for net in ("actor", "critic"):
         for name, parameter in agent.weights()[net].items():
@@ -217,13 +209,11 @@ def test_incomplete_or_unlearnable_pilot_cannot_qualify():
     assert not report["qualified"] and not report["learnable"]
 
 
-@pytest.mark.parametrize("fresh_auc,late_auc,fresh_return,learned", [(0.5, 0.4, 0.4, False), (5, 4, 4, True)])
-def test_probe_deficit_requires_a_learned_fresh_reference(fresh_auc, late_auc, fresh_return, learned):
-    probes = {"initial": {"asterix": {"auc": fresh_auc, "curve": [{"return": fresh_return}]}}, "final": {"asterix": {"auc": late_auc}}}
-    result = qualification("minatar", {"finetune": {"probes": probes}}, {"asterix": {"return": 0.2}})
-    assert result["probe_auc_threshold_met"]
-    assert result["probe_reference_learnable"]["asterix"] == learned
-    assert result["plasticity_loss_demonstrated"] == learned
+def test_pilot_checks_do_not_infer_plasticity_from_old_probe_scores():
+    old = {"initial": {"asterix": {"auc": 5}}, "final": {"asterix": {"auc": 0}}}
+    result = qualification("minatar", {"finetune": {"probes": old}}, {})
+    assert not any("auc" in key or "plasticity_loss" in key for key in result)
+    assert result["plasticity_assessment"] == "descriptive probe curves only"
 
 
 def test_checkpoint_restores_behavior_optimizer_memory_and_cbp(config, tmp_path):
@@ -289,7 +279,7 @@ def test_standalone_reference_jobs_have_explicit_matching_budgets(config, tmp_pa
     assert len(set(job["out"] for job in scratch)) == 3
 
 
-def test_main_run_keeps_intermediate_checkpoints_outside_results(config, tmp_path):
+def test_main_run_keeps_named_phase_weights_and_archives_other_intermediate_checkpoints(config, tmp_path):
     from pathlib import Path
     from src.utils.study import main_jobs
 
@@ -303,7 +293,17 @@ def test_main_run_keeps_intermediate_checkpoints_outside_results(config, tmp_pat
     assert (root / "replay" / "model.pt").exists()
     assert (root / "replay" / "config.yaml").exists()
     assert (work / "checkpoints" / "replay" / "block_0001.pt").exists()
-    assert not list(root.rglob("checkpoints")) and not (root / "main").exists()
+    saved = root / "replay" / "checkpoints"
+    assert {path.name for path in saved.iterdir()} == {"initial.pt", "midpoint.pt", "final.pt"}
+    assert not (root / "main").exists()
+    for phase, block in [("initial", 0), ("midpoint", 1), ("final", 1)]:
+        payload = torch.load(saved / f"{phase}.pt", weights_only=False)
+        original = torch.load(work / "checkpoints" / "replay" / f"block_{block:04d}.pt", weights_only=False)
+        assert payload["kind"] == "probe_weights" and payload["completed_blocks"] == block
+        assert payload["env_steps"] == 32 * block and payload["arm"] == "replay"
+        for network, weights in original["weights"].items():
+            for name, value in weights.items():
+                torch.testing.assert_close(payload["weights"][network][name], value, rtol=0, atol=0)
 
 
 def test_report_reanalysis_reuses_audits_without_instantiating_learners(config, tmp_path, monkeypatch):
@@ -390,22 +390,27 @@ def test_collector_stores_truncated_final_observation_before_reset(config, monke
     collector.close()
 
 
-def test_interrupted_probe_retains_partial_curve(config, monkeypatch):
+def test_interrupted_probe_retains_completed_episode_log(config, monkeypatch):
     agent = ActorCritic(config, "minatar", "finetune")
+    config["train"]["probe_steps"] = 32
+    agent.config["train"]["probe_steps"] = 32
+    original = Collector.collect
     calls = 0
-    original = evaluate
 
-    def interrupt(*args, **kwargs):
+    def interrupt(self, deadline):
         nonlocal calls
         calls += 1
         if calls == 2:
             raise BudgetExpired()
-        return original(*args, **kwargs)
+        data = original(self, deadline)
+        self.episodes.append({"env_steps": self.steps, "return": 7})
+        return data
 
-    monkeypatch.setattr("src.utils.runtime.evaluate", interrupt)
+    monkeypatch.setattr(Collector, "collect", interrupt)
     results = {}
     with pytest.raises(BudgetExpired):
         probe_tasks(agent, time.time() + 10, "interrupted", results)
-    partial = results[task_names("minatar", True)[0]]
-    assert partial["status"] == "incomplete" and partial["auc"] is None
-    assert len(partial["curve"]) == 1 and partial["train_env_steps"] > 0
+    partial = results["asterix"]
+    assert partial["status"] == "incomplete" and partial["train_env_steps"] == 16
+    assert partial["episode_log"][-1]["return"] == 7
+    assert "auc" not in partial and "curve" not in partial

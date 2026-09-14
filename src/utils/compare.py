@@ -42,10 +42,10 @@ def refresh(root):
             selected = current
     source_files = sorted(Path(__file__).resolve().parents[1].rglob("*.py"))
     source_hashes = {str(file): hashlib.sha256(file.read_bytes()).hexdigest() for file in source_files}
-    patterns = ("metrics.json", "run.json", "episodes.csv", "evaluations.csv", "blocks.csv", "diagnostics.csv", "probes.csv", "probe_summary.csv")
+    patterns = ("metrics.json", "run.json", "episodes.csv", "evaluations.csv", "blocks.csv", "diagnostics.csv", "plasticity.csv", "probes.csv", "probe_summary.csv", "probe_settings.json")
     raw_files = sorted(file for base in (root, work / "pilot") for pattern in patterns for file in base.rglob(pattern))
     raw_hashes = {str(file): hashlib.sha256(file.read_bytes()).hexdigest() for file in raw_files}
-    analysis = {"started_at": started, "training_source_sha256": manifest["source_sha256"], "analysis_source_hashes": source_hashes, "raw_metric_hashes": raw_hashes, "additional_training_steps": 0, "additional_evaluation_steps": 0, "checkpoint_audits_reused": True, "note": "Regenerated from saved data. Weak fresh-probe references cannot establish plasticity loss. Original qualification and report are retained in the temporary workspace. No training or evaluation is performed."}
+    analysis = {"started_at": started, "training_source_sha256": manifest["source_sha256"], "analysis_source_hashes": source_hashes, "raw_metric_hashes": raw_hashes, "additional_training_steps": 0, "additional_evaluation_steps": 0, "checkpoint_audits_reused": True, "note": "Regenerated from saved data with descriptive probe curves and matched scratch normalization. Original qualification and report are retained in the temporary workspace. No training or evaluation is performed."}
     save_json(work / "analysis.json", analysis)
     finalizer = finalize_scratch if config["arms"] == ["scratch"] else finalize
     report = finalizer(root, config, selected, manifest, float("inf"), saved_artifacts=saved)

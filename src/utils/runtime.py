@@ -1,4 +1,5 @@
 import math
+import json
 import time
 from pathlib import Path
 
@@ -6,15 +7,16 @@ import numpy as np
 import torch
 
 from .io import append_csv, save_config, save_json
-from .envs import fixed_observations, make_env, seed_for, task_names
+from .envs import make_env, seed_for, task_names
+from ..cbp import InteractionDiagnostics
 from ..clear.learner import ActorCritic
 
 EPISODE_COLUMNS = ("episode", "block", "task", "start_env_steps", "env_steps", "return")
 EVALUATION_COLUMNS = ("block", "scope", "env_steps", "train_episodes", "block_task", "task", "episode", "return", "eval_steps")
 BLOCK_COLUMNS = ("block", "task", "start_env_steps", "env_steps", "seconds", "auc")
 PROBE_COLUMNS = ("phase", "task", "scope", "env_steps", "episode", "return")
-PROBE_SUMMARY_COLUMNS = ("phase", "task", "status", "auc", "train_env_steps")
-RUN_FIELDS = ("schema", "arm", "suite", "seed", "blocks", "completed_blocks", "env_steps", "attempted_env_steps", "planned_steps", "status", "error", "seconds", "updates", "transitions_per_second", "gpu_peak_bytes", "probe_checkpoint_blocks")
+PROBE_SUMMARY_COLUMNS = ("phase", "task", "status", "train_env_steps", "updates")
+RUN_FIELDS = ("schema", "arm", "suite", "seed", "blocks", "completed_blocks", "env_steps", "attempted_env_steps", "planned_steps", "status", "error", "seconds", "updates", "transitions_per_second", "gpu_peak_bytes", "probe_checkpoint_blocks", "plasticity_metrics")
 
 
 class BudgetExpired(RuntimeError):
@@ -30,10 +32,7 @@ def evaluation_rows(block, scope, env_steps, train_episodes, block_task, scores)
 def probe_rows(phase, results):
     rows, summary = [], []
     for task, payload in results.items():
-        summary.append({"phase": phase, "task": task, "status": payload["status"], "auc": payload["auc"], "train_env_steps": payload["train_env_steps"]})
-        for point in payload["curve"]:
-            rows.extend({"phase": phase, "task": task, "scope": "eval", "env_steps": point["steps"], "episode": index, "return": value}
-                        for index, value in enumerate(point.get("episodes", [point["return"]]), start=1))
+        summary.append({"phase": phase, "task": task, "status": payload["status"], "train_env_steps": payload["train_env_steps"], "updates": payload.get("updates")})
         rows.extend({"phase": phase, "task": task, "scope": "train", "env_steps": entry["env_steps"], "episode": number, "return": entry["return"]}
                     for number, entry in enumerate(payload["episode_log"], start=1))
     return rows, summary
@@ -43,6 +42,10 @@ def save_probes(out, phase, results):
     rows, summary = probe_rows(phase, results)
     append_csv(out / "probes.csv", PROBE_COLUMNS, rows)
     append_csv(out / "probe_summary.csv", PROBE_SUMMARY_COLUMNS, summary)
+    path = out / "probe_settings.json"
+    settings = json.loads(path.read_text()) if path.exists() else {}
+    settings[phase] = {task: payload.get("train_settings", {}) for task, payload in results.items()}
+    save_json(path, settings)
 
 
 def save_run(out, metrics):
@@ -61,9 +64,19 @@ def atomic_checkpoint(path, payload):
     temporary.replace(path)
 
 
+def save_phase_checkpoint(out, agent, phase, completed_blocks, env_steps):
+    payload = {"schema": 1, "kind": "probe_weights", "suite": agent.suite, "arm": agent.arm,
+               "phase": phase, "completed_blocks": completed_blocks, "env_steps": env_steps,
+               "config": agent.config, "weights": agent.weights(), "updates": agent.updates}
+    path = Path(out) / "checkpoints" / f"{phase}.pt"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    atomic_checkpoint(path, payload)
+
+
 class Collector:
-    def __init__(self, agent, tasks, purpose=17):
+    def __init__(self, agent, tasks, purpose=17, recorder=None):
         self.agent = agent
+        self.recorder = recorder
         width = agent.config["train"]["num_envs"]
         width = math.lcm(width, len(tasks)) if len(tasks) > 1 else width
         self.tasks = [tasks[i % len(tasks)] for i in range(width)]
@@ -79,7 +92,7 @@ class Collector:
         rows = []
         for _ in range(self.agent.config["train"]["unroll_length"]):
             observation = np.stack(self.states)
-            actions, logits, values = self.agent.act(observation)
+            actions, logits, values = self.agent.act(observation, recorder=self.recorder)
             next_states, rewards, terminals, boundaries = [], [], [], []
             self.steps += len(self.envs)
             for slot, env in enumerate(self.envs):
@@ -90,9 +103,9 @@ class Collector:
                 boundaries.append(terminated or truncated)
                 self.returns[slot] += reward
                 if terminated or truncated:
-                    self.episodes.append({"task": self.tasks[slot], "return": float(self.returns[slot]), "start_env_steps": int(self.starts[slot]), "env_steps": self.steps})
+                    self.episodes.append({"task": self.tasks[slot], "return": float(self.returns[slot]), "start_env_steps": int(self.starts[slot]), "env_steps": self.steps - len(self.envs) + slot + 1})
                     self.returns[slot] = 0
-                    self.starts[slot] = self.steps
+                    self.starts[slot] = self.steps - len(self.envs) + slot + 1
                     state, _ = env.reset()
                 self.states[slot] = state
             rows.append({"observation": observation, "next_observation": np.stack(next_states), "action": actions.astype(np.int64), "reward": np.asarray(rewards, dtype=np.float32), "terminated": np.asarray(terminals, dtype=bool), "boundary": np.asarray(boundaries, dtype=bool), "behavior_logits": logits, "behavior_value": values})
@@ -157,27 +170,21 @@ def probe_tasks(source, deadline, label, results=None):
         check_time(deadline)
         agent = source.probe_learner()
         collector = Collector(agent, [task], purpose=313)
-        points = []
         budget = config["train"]["probe_steps"]
-        interval = max(1, min(config["eval"]["period"], budget))
-        next_measure = 0
+        quantum = config["train"]["unroll_length"] * len(collector.envs)
         complete = False
         try:
-            while collector.steps <= budget:
-                if collector.steps >= next_measure or collector.steps == budget:
-                    report = evaluate(agent, [task], config["eval"]["episodes"], deadline, moment=collector.steps)[task]
-                    points.append({"steps": collector.steps, **report})
-                    next_measure = collector.steps + interval
-                if collector.steps == budget:
-                    complete = True
-                    break
+            if budget % quantum:
+                raise ValueError("Probe budget must contain complete rollouts")
+            while collector.steps < budget:
                 learn_rollout(agent, collector.collect(deadline))
-            results[task] = {"status": "complete", "curve": points, "auc": auc(points), "train_env_steps": collector.steps, "episode_log": list(collector.episodes)}
+            complete = True
         finally:
             collector.close()
-            if not complete:
-                results[task] = {"status": "incomplete", "curve": points, "auc": None, "train_env_steps": collector.steps, "episode_log": list(collector.episodes)}
-        print(f"[probe {source.arm}/{label}/{task}] auc={results[task]['auc']:.2f}", flush=True)
+            results[task] = {"status": "complete" if complete else "incomplete",
+                             "train_env_steps": collector.steps, "episode_log": list(collector.episodes),
+                             "updates": agent.updates, "train_settings": dict(agent.config["train"])}
+        print(f"[probe {source.arm}/{label}/{task}] steps={collector.steps:,} episodes={len(collector.episodes)}", flush=True)
     return results
 
 
@@ -193,8 +200,14 @@ def run_job(job):
         torch.cuda.reset_peak_memory_stats()
     tasks = task_names(suite)
     blocks = job.get("blocks", tasks * config["cycles"])
-    observations = fixed_observations(suite, config["eval"]["fixed_observations"])
+    recorder = InteractionDiagnostics([agent.actor, agent.critic], config.get("diagnostics"))
+    plasticity_columns = ["block", "env_steps"]
+    for name, network in zip(("actor", "critic"), recorder.buffers):
+        plasticity_columns.extend(f"{name}_{key}" for key in ("dormant_percent", "stable_rank", "stable_rank_percent"))
+        plasticity_columns.extend(f"{name}_weight_magnitude_{i}" for i in range(len(network) + 1))
+    append_csv(out / "plasticity.csv", plasticity_columns, [])
     metrics = {"schema": 1, "arm": arm, "suite": suite, "seed": 0, "config": config, "blocks": blocks, "completed_blocks": 0, "env_steps": 0, "attempted_env_steps": 0, "matrix": [], "curves": [], "episode_log": [], "diagnostics": [], "probes": {}, "probe_checkpoint_blocks": {}, "status": "running", "planned_steps": len(blocks) * job.get("block_steps", config["train"]["block_steps"])}
+    metrics["plasticity_metrics"] = recorder.metadata()
     started = time.time()
     model_path = out / "model.pt"
     collector = None
@@ -207,6 +220,8 @@ def run_job(job):
         atomic_checkpoint(model_path, agent.checkpoint())
         checkpoints.mkdir(parents=True, exist_ok=True)
         atomic_checkpoint(checkpoints / "block_0000.pt", {"weights": agent.weights(), "updates": 0})
+        save_phase_checkpoint(out, agent, "initial", 0, 0)
+        metrics["probe_checkpoint_blocks"]["initial"] = 0
         if job.get("probes", False):
             metrics["probe_checkpoint_blocks"]["initial"] = 0
             if job.get("initial_probes"):
@@ -219,7 +234,7 @@ def run_job(job):
             pool = tasks if task == "multitask" else [task]
             steps_before = metrics["env_steps"]
             logged_before = len(metrics["episode_log"])
-            collector = Collector(agent, pool)
+            collector = Collector(agent, pool, recorder=recorder)
             quantum = config["train"]["unroll_length"] * len(collector.envs)
             budget = job.get("block_steps", config["train"]["block_steps"])
             budget = max(quantum, budget // quantum * quantum)
@@ -231,6 +246,9 @@ def run_job(job):
             train_start = time.time()
             while collector.steps < budget:
                 data = collector.collect(deadline)
+                rows = recorder.drain()
+                if rows:
+                    append_csv(out / "plasticity.csv", plasticity_columns, [{"block": index, **row} for row in rows])
                 learn_rollout(agent, data)
                 if steps_before + collector.steps >= next_measure and collector.steps < budget:
                     # Every task, not just the trained one: retention must be measured.
@@ -246,11 +264,15 @@ def run_job(job):
             metrics["curves"].append({"block": index, "task": task, "points": points, "auc": auc(points), "steps": collector.steps, "seconds": time.time() - train_start})
             metrics["episode_log"].extend({"block": index, "task": entry["task"], "start_env_steps": steps_before + entry["start_env_steps"], "env_steps": steps_before + entry["env_steps"], "return": entry["return"]} for entry in collector.episodes)
             metrics["matrix"].append({"block": index, "task": task, "steps": metrics["env_steps"], "scores": scores})
-            metrics["diagnostics"].append({"block": index, "steps": metrics["env_steps"], **agent.diagnostics(observations)})
+            metrics["diagnostics"].append({"block": index, "steps": metrics["env_steps"], **agent.diagnostics()})
             collector.close()
             collector = None
             atomic_checkpoint(model_path, agent.checkpoint())
             atomic_checkpoint(checkpoints / f"block_{index + 1:04d}.pt", {"weights": agent.weights(), "updates": agent.updates})
+            for phase, boundary in (("midpoint", max(1, len(blocks) // 2)), ("final", len(blocks))):
+                if index + 1 == boundary:
+                    save_phase_checkpoint(out, agent, phase, boundary, metrics["env_steps"])
+                    metrics["probe_checkpoint_blocks"][phase] = boundary
             metrics["seconds"] = time.time() - started
             append_csv(out / "episodes.csv", EPISODE_COLUMNS, [{"episode": number, **entry} for number, entry in enumerate(metrics["episode_log"][logged_before:], start=logged_before + 1)])
             # First and last points repeat neighbouring boundaries, so log interiors only.

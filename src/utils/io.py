@@ -17,7 +17,7 @@ def append_csv(path, columns, rows):
     path.parent.mkdir(parents=True, exist_ok=True)
     fresh = not path.exists()
     with path.open("a", newline="") as handle:
-        writer = csv.DictWriter(handle, fieldnames=columns, extrasaction="ignore", restval="")
+        writer = csv.DictWriter(handle, fieldnames=columns, extrasaction="ignore", restval="", lineterminator="\n")
         if fresh:
             writer.writeheader()
         writer.writerows(rows)
@@ -96,12 +96,15 @@ def read_run(directory):
             entry.setdefault("env_steps", entry.get("steps"))
         legacy["evaluations"] = [{"block": row["block"], "scope": "boundary", "env_steps": row["steps"], "block_task": row["task"], "task": task, "episode": index, "return": value, "eval_steps": score.get("env_steps"), "train_episodes": None}
                                  for row in legacy.get("matrix", []) for task, score in row["scores"].items() for index, value in enumerate(score.get("episodes", []), start=1)]
+        legacy["plasticity"] = []
+        legacy.pop("plasticity_metrics", None)
         return legacy
     run = json.loads((directory / "run.json").read_text())
     config = directory / "config.yaml"
     run["config"] = yaml.safe_load(config.read_text()) if config.exists() else {}
     run["episode_log"] = read_csv(directory / "episodes.csv")
     run["diagnostics"] = read_csv(directory / "diagnostics.csv")
+    run["plasticity"] = read_csv(directory / "plasticity.csv") if run.get("plasticity_metrics", {}).get("schema") == 1 else []
     run["block_log"] = read_csv(directory / "blocks.csv")
     evaluations = read_csv(directory / "evaluations.csv")
     run["evaluations"] = evaluations
@@ -120,14 +123,13 @@ def read_run(directory):
         points.setdefault(block, []).append({"steps": steps, "return": float(np.mean([score["return"] for score in scores.values()])), "scores": scores})
     run["curves"] = [{**entry, "points": points.get(entry["block"], [])} for entry in run["block_log"]]
     run["probes"] = {}
+    settings_path = directory / "probe_settings.json"
+    settings = json.loads(settings_path.read_text()) if settings_path.exists() else {}
     probe_rows = read_csv(directory / "probes.csv")
     for row in read_csv(directory / "probe_summary.csv"):
         phase = run["probes"].setdefault(row["phase"], {})
         mine = [entry for entry in probe_rows if entry["phase"] == row["phase"] and entry["task"] == row["task"]]
-        curve = {}
-        for entry in (entry for entry in mine if entry["scope"] == "eval"):
-            curve.setdefault(entry["env_steps"], []).append(entry["return"])
-        phase[row["task"]] = {"status": row["status"], "auc": row["auc"], "train_env_steps": row["train_env_steps"],
-                              "curve": [{"steps": steps, "return": float(np.mean(values))} for steps, values in sorted(curve.items())],
+        phase[row["task"]] = {"status": row["status"], "train_env_steps": row["train_env_steps"],
+                              "updates": row.get("updates"), "train_settings": settings.get(row["phase"], {}).get(row["task"], {}),
                               "episode_log": [entry for entry in mine if entry["scope"] == "train"]}
     return run

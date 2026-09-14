@@ -1,0 +1,4 @@
+phase,task,status,train_env_steps,updates
+initial,asterix,complete,5242880,20480
+midpoint,asterix,complete,5242880,20480
+final,asterix,complete,5242880,20480

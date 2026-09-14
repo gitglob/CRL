@@ -4,7 +4,7 @@ import numpy as np
 import torch
 from torch import nn
 
-from ..cbp import AdamCBP, FeatureProbe, attach, plasticity
+from ..cbp import AdamCBP, FeatureProbe, attach
 from ..utils.envs import dimensions
 from .replay import UnrollReservoir, mix_batch
 
@@ -72,11 +72,22 @@ class ActorCritic:
         self.last = {}
 
     @torch.no_grad()
-    def act(self, observations, greedy=False, rng=None):
+    def act(self, observations, greedy=False, rng=None, recorder=None):
         states = torch.as_tensor(np.asarray(observations), device=self.device, dtype=torch.float32)
-        logits = self.actor(states)
-        actions = logits.argmax(dim=-1) if greedy else torch.multinomial(logits.softmax(dim=-1), 1, generator=self.action_rng if rng is None else rng).squeeze(-1)
-        values = self.critic(states).squeeze(-1)
+        saved = [(probe.features, probe.capturing) for probe in self.probes]
+        if recorder is not None:
+            for probe in self.probes:
+                probe.features = [None] * len(probe.features)
+                probe.capturing = True
+        try:
+            logits = self.actor(states)
+            actions = logits.argmax(dim=-1) if greedy else torch.multinomial(logits.softmax(dim=-1), 1, generator=self.action_rng if rng is None else rng).squeeze(-1)
+            values = self.critic(states).squeeze(-1)
+            if recorder is not None:
+                recorder.observe([probe.features for probe in self.probes])
+        finally:
+            for probe, (features, capturing) in zip(self.probes, saved):
+                probe.features, probe.capturing = features, capturing
         return actions.cpu().numpy(), logits.cpu().numpy(), values.cpu().numpy()
 
     def optimize(self, fresh):
@@ -120,19 +131,10 @@ class ActorCritic:
         return self.last
 
     @torch.no_grad()
-    def diagnostics(self, observations):
+    def diagnostics(self):
         result = {"updates": self.updates, "memory_transitions": len(self.memory.items) * self.memory.unroll_length if self.memory else 0, **self.last}
-        states = torch.as_tensor(observations, device=self.device, dtype=torch.float32)
-        for index, (name, net, probe) in enumerate(zip(("actor", "critic"), (self.actor, self.critic), self.probes)):
-            saved = probe.features
-            probe.capturing = True
-            net(states)
-            probe.capturing = False
-            values = plasticity(net, probe.features, self.config["cbp"]["dead_threshold"])
-            probe.features = saved
-            result.update({f"{name}_{key}": value for key, value in values.items()})
-            if self.cbp:
-                result.update({f"{name}_{key}": value for key, value in self.cbp[index].statistics().items()})
+        for name, cbp in zip(("actor", "critic"), self.cbp):
+            result.update({f"{name}_{key}": value for key, value in cbp.statistics().items()})
         if str(self.device).startswith("cuda"):
             result["gpu_peak_bytes"] = torch.cuda.max_memory_allocated()
         return result
@@ -145,7 +147,9 @@ class ActorCritic:
         self.critic.load_state_dict(weights["critic"])
 
     def probe_learner(self):
-        agent = ActorCritic(self.config, self.suite, "finetune", device=self.device)
+        config = deepcopy(self.config)
+        config["train"].update(config.get("probe_train", {}))
+        agent = ActorCritic(config, self.suite, "finetune", device=self.device)
         agent.load_weights(self.weights())
         return agent
 

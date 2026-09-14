@@ -1,0 +1,23 @@
+{
+  "initial": {
+    "file": "initial.pt",
+    "completed_blocks": 0,
+    "env_steps": 0,
+    "source": "tmp/stability-plasticity/checkpoints/scratch/freeway/block_0000.pt",
+    "source_sha256": "cec004a6c1de3ca0bacf4e31a3cea6aabda9d7d9d8f9c1ea8dbc4d0c380cd19e"
+  },
+  "midpoint": {
+    "file": "midpoint.pt",
+    "completed_blocks": 2,
+    "env_steps": 999936,
+    "source": "tmp/stability-plasticity/checkpoints/scratch/freeway/block_0002.pt",
+    "source_sha256": "7b3b9a0e0c18aa78d0196b4d13ccef20b9bf922ff53093d7292c9bcf005cd0f0"
+  },
+  "final": {
+    "file": "final.pt",
+    "completed_blocks": 5,
+    "env_steps": 2499840,
+    "source": "tmp/stability-plasticity/checkpoints/scratch/freeway/block_0005.pt",
+    "source_sha256": "3bb2e59319b99c6bd883328426cf085a703598f5620e3dd1b10d9798ca1fd020"
+  }
+}

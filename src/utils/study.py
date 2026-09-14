@@ -57,20 +57,13 @@ def qualification(suite, runs, random_scores):
     learnable = all(denominators[task] > max(1, 0.2 * random_scores.get(task, {}).get("return", 0)) and joint_scores.get(task, 0) >= random_scores.get(task, {}).get("return", 0) + 0.8 * denominators[task] for task in tasks)
     drops = retention_drops(sequential.get("matrix", []))
     forgetting_tasks = [task for task in tasks if denominators[task] > 0 and max([row["drop"] for row in drops if row["task"] == task] or [0]) / denominators[task] >= 0.2]
-    probes = sequential.get("probes", {})
-    deficits, probe_learnable = {}, {}
-    for task in task_names(suite, probes=True):
-        fresh = probes.get("initial", {}).get(task, {})
-        late = probes.get("final", {}).get(task, {})
-        baseline = fresh.get("auc")
-        current = late.get("auc")
-        denominator = fresh.get("curve", [{}])[-1].get("return", 0) - random_scores.get(task, {}).get("return", 0)
-        deficits[task] = (baseline - current) / denominator if baseline is not None and current is not None and denominator > 0 else None
-        probe_learnable[task] = denominator > max(1, 0.2 * random_scores.get(task, {}).get("return", 0))
-    plasticity_tasks = [task for task, deficit in deficits.items() if deficit is not None and deficit >= 0.1]
-    required_probes = 1
-    plasticity = len([task for task in plasticity_tasks if probe_learnable[task]]) >= required_probes
-    return {"qualified": completed and learnable and len(forgetting_tasks) >= 2 and plasticity, "all_pilots_complete": completed, "learnable": learnable, "forgetting_demonstrated": len(forgetting_tasks) >= 2, "plasticity_loss_demonstrated": plasticity, "probe_auc_threshold_met": len(plasticity_tasks) >= required_probes, "probe_reference_learnable": probe_learnable, "scratch_returns": scratch_scores, "joint_returns": joint_scores, "random_scores": random_scores, "forgetting_tasks": forgetting_tasks, "probe_auc_deficits": deficits, "retention_drops": drops, "fresh_reference": "Initial weights equal the seeded scratch network; the initial probes are the paired scratch reference."}
+    return {"qualified": completed and learnable and len(forgetting_tasks) >= 2,
+            "all_pilots_complete": completed, "learnable": learnable,
+            "forgetting_demonstrated": len(forgetting_tasks) >= 2,
+            "scratch_returns": scratch_scores, "joint_returns": joint_scores,
+            "random_scores": random_scores, "forgetting_tasks": forgetting_tasks,
+            "retention_drops": drops, "plasticity_assessment": "descriptive probe curves only"}
+
 
 
 def retention_drops(matrix):
@@ -134,14 +127,14 @@ def pilot(config, suite, root, workers, deadline):
     runs = {str(Path(job["out"]).relative_to(pilot_root)): read_metrics(job["out"]) for job in job_list}
     agent = ActorCritic(config, suite, "finetune")
     try:
-        random_scores = evaluate(agent, tasks + task_names(suite, probes=True), config["eval"]["episodes"], deadline, random_policy=True)
+        random_scores = evaluate(agent, tasks, config["eval"]["episodes"], deadline, random_policy=True)
     except BudgetExpired:
         random_scores = {}
     report = qualification(suite, runs, random_scores)
     report["jobs"] = outputs
     pilot_root.mkdir(parents=True, exist_ok=True)
     save_json(pilot_root / "qualification.json", report)
-    print(f"[qualification {suite}] learnable={report['learnable']} forgetting={report['forgetting_demonstrated']} plasticity={report['plasticity_loss_demonstrated']} qualified={report['qualified']}", flush=True)
+    print(f"[qualification {suite}] learnable={report['learnable']} forgetting={report['forgetting_demonstrated']}", flush=True)
     return report, runs
 
 
@@ -235,7 +228,7 @@ def study(config, overwrite=False):
     finalizer = finalize_scratch if settings["arms"] == ["scratch"] else finalize
     final_report = finalizer(root, settings, report, manifest, deadline)
     manifest["elapsed_seconds"] = time.time() - started
-    manifest["status"] = "complete" if final_report["qualified"] and final_report["all_runs_complete"] and final_report["all_checkpoints_verified"] else "inconclusive"
+    manifest["status"] = "complete" if final_report["all_runs_complete"] and final_report["all_checkpoints_verified"] else "incomplete"
     save_json(work / "manifest.json", manifest)
     final_report["provenance"] = manifest
     final_report["profile"] = profiling

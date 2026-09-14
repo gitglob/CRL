@@ -1,4 +1,5 @@
 import argparse
+import math
 from copy import deepcopy
 from pathlib import Path
 
@@ -7,6 +8,7 @@ import yaml
 
 ARMS = ("finetune", "cbp", "replay", "clear", "clear_cbp", "scratch", "multitask")
 MAIN_ARMS = ARMS[:5]
+PROBE_TRAIN_KEYS = ("learning_rate", "gamma", "entropy_weight", "value_weight", "gradient_clip")
 
 
 def merge(base, override):
@@ -49,10 +51,25 @@ def validate(config):
         raise ValueError("Replay capacity must hold at least one complete unroll")
     if not 0 < train["gamma"] <= 1 or train["learning_rate"] <= 0:
         raise ValueError("Invalid learning settings")
+    overrides = config.get("probe_train", {})
+    if set(overrides) - set(PROBE_TRAIN_KEYS):
+        raise ValueError("probe_train only supports optimizer and loss settings")
+    probe = {**train, **overrides}
+    if any(not math.isfinite(probe[key]) for key in PROBE_TRAIN_KEYS):
+        raise ValueError("Probe settings must be finite")
+    if not 0 < probe["gamma"] <= 1 or not probe["learning_rate"] > 0 or not probe["gradient_clip"] > 0:
+        raise ValueError("Invalid probe learning settings")
+    if any(not probe[key] >= 0 for key in ("entropy_weight", "value_weight")):
+        raise ValueError("Probe loss weights must be nonnegative")
     if config["cycles"] < 1 or config["eval"]["episodes"] < 1:
         raise ValueError("Cycles and evaluation episodes must be positive")
-    if any(config["eval"][key] < 1 for key in ("period", "fixed_observations", "clip_stride")):
+    if any(config["eval"][key] < 1 for key in ("period", "clip_stride")):
         raise ValueError("Evaluation intervals and observation counts must be positive")
+    diagnostics = config.get("diagnostics", {"window_steps": 1000, "period": 1000, "rank_period": 10000})
+    if any(not isinstance(value, int) or value <= 0 for value in diagnostics.values()):
+        raise ValueError("Diagnostic windows and intervals must be positive integers")
+    if diagnostics["rank_period"] % diagnostics["period"]:
+        raise ValueError("Rank interval must be a multiple of the diagnostic interval")
     if not 0 <= config["cbp"]["replacement_rate"] < 1 or config["cbp"]["maturity_threshold"] < 0:
         raise ValueError("Invalid CBP settings")
     if not 0 < config["cbp"]["decay_rate"] < 1:
@@ -80,4 +97,3 @@ def resolve(args):
     if args.arm:
         config["arms"] = [args.arm]
     return validate(config)
-

@@ -2,294 +2,645 @@
   "schema": 1,
   "suite": "minatar",
   "seed": 0,
-  "outcome": "inconclusive demonstration",
+  "outcome": "completed study",
   "qualified": false,
-  "common_completed_blocks": 60,
+  "common_completed_blocks": 15,
   "all_runs_complete": true,
   "all_checkpoints_verified": true,
   "arms": {
     "finetune": {
       "status": "complete",
-      "completed_blocks": 60,
-      "compared_blocks": 60,
-      "compared_env_steps": 1966080,
+      "completed_blocks": 15,
+      "compared_blocks": 15,
+      "compared_env_steps": 7499520,
       "final_returns": {
-        "breakout": 4.8,
-        "space_invaders": 43.2,
-        "freeway": 11.0
+        "breakout": 5.0,
+        "space_invaders": 28.2,
+        "freeway": 27.2
       },
-      "average_normalized_performance": null,
+      "average_normalized_performance": 0.7631320233297302,
       "forgetting_since_last_learning": {
-        "breakout": 0.0,
-        "space_invaders": 48.0,
+        "breakout": 0.5,
+        "space_invaders": 0.6000000000000014,
         "freeway": 0.0
       },
-      "probe_auc": {
+      "normalization_references": {
+        "breakout": {
+          "path": "results/scratch/breakout",
+          "training_env_steps": 2499840,
+          "scratch_env_steps": 2499840,
+          "scratch_return": 4.9,
+          "random_return": 0.6
+        },
+        "space_invaders": {
+          "path": "results/scratch/space_invaders",
+          "training_env_steps": 2499840,
+          "scratch_env_steps": 2499840,
+          "scratch_return": 40.7,
+          "random_return": 2.4
+        },
+        "freeway": {
+          "path": "results/scratch/freeway",
+          "training_env_steps": 2499840,
+          "scratch_env_steps": 2499840,
+          "scratch_return": 45.7,
+          "random_return": 0.3
+        }
+      },
+      "probes": {
         "initial": {
-          "asterix": 0.5
+          "asterix": {
+            "status": "complete",
+            "train_env_steps": 5242880,
+            "updates": 20480,
+            "train_settings": {
+              "hidden_sizes": [
+                256,
+                256
+              ],
+              "learning_rate": 0.001,
+              "gamma": 0.99,
+              "gradient_clip": 1.0,
+              "unroll_length": 16,
+              "batch_unrolls": 16,
+              "num_envs": 16,
+              "block_steps": 499968,
+              "probe_steps": 5242880,
+              "value_weight": 0.5,
+              "entropy_weight": 0.005
+            }
+          }
         },
         "midpoint": {
-          "asterix": 0.4
+          "asterix": {
+            "status": "complete",
+            "train_env_steps": 5242880,
+            "updates": 20480,
+            "train_settings": {
+              "hidden_sizes": [
+                256,
+                256
+              ],
+              "learning_rate": 0.001,
+              "gamma": 0.99,
+              "gradient_clip": 1.0,
+              "unroll_length": 16,
+              "batch_unrolls": 16,
+              "num_envs": 16,
+              "block_steps": 499968,
+              "probe_steps": 5242880,
+              "value_weight": 0.5,
+              "entropy_weight": 0.005
+            }
+          }
         },
         "final": {
-          "asterix": 0.8
+          "asterix": {
+            "status": "complete",
+            "train_env_steps": 5242880,
+            "updates": 20480,
+            "train_settings": {
+              "hidden_sizes": [
+                256,
+                256
+              ],
+              "learning_rate": 0.001,
+              "gamma": 0.99,
+              "gradient_clip": 1.0,
+              "unroll_length": 16,
+              "batch_unrolls": 16,
+              "num_envs": 16,
+              "block_steps": 499968,
+              "probe_steps": 5242880,
+              "value_weight": 0.5,
+              "entropy_weight": 0.005
+            }
+          }
         }
       },
       "probe_checkpoint_blocks": {
         "initial": 0,
-        "midpoint": 30,
-        "final": 60
+        "midpoint": 7,
+        "final": 15
       },
-      "updates": 7680
+      "updates": 29295
     },
     "cbp": {
       "status": "complete",
-      "completed_blocks": 60,
-      "compared_blocks": 60,
-      "compared_env_steps": 1966080,
+      "completed_blocks": 15,
+      "compared_blocks": 15,
+      "compared_env_steps": 7499520,
       "final_returns": {
-        "breakout": 5.4,
-        "space_invaders": 57.8,
-        "freeway": 7.2
+        "breakout": 5.7,
+        "space_invaders": 35.6,
+        "freeway": 28.7
       },
-      "average_normalized_performance": null,
+      "average_normalized_performance": 0.8928126344971181,
       "forgetting_since_last_learning": {
-        "breakout": 0.0,
-        "space_invaders": -5.799999999999997,
+        "breakout": -0.5,
+        "space_invaders": 12.199999999999996,
         "freeway": 0.0
       },
-      "probe_auc": {
+      "normalization_references": {
+        "breakout": {
+          "path": "results/scratch/breakout",
+          "training_env_steps": 2499840,
+          "scratch_env_steps": 2499840,
+          "scratch_return": 4.9,
+          "random_return": 0.6
+        },
+        "space_invaders": {
+          "path": "results/scratch/space_invaders",
+          "training_env_steps": 2499840,
+          "scratch_env_steps": 2499840,
+          "scratch_return": 40.7,
+          "random_return": 2.4
+        },
+        "freeway": {
+          "path": "results/scratch/freeway",
+          "training_env_steps": 2499840,
+          "scratch_env_steps": 2499840,
+          "scratch_return": 45.7,
+          "random_return": 0.3
+        }
+      },
+      "probes": {
         "initial": {
-          "asterix": 0.5
+          "asterix": {
+            "status": "complete",
+            "train_env_steps": 5242880,
+            "updates": 20480,
+            "train_settings": {
+              "hidden_sizes": [
+                256,
+                256
+              ],
+              "learning_rate": 0.001,
+              "gamma": 0.99,
+              "gradient_clip": 1.0,
+              "unroll_length": 16,
+              "batch_unrolls": 16,
+              "num_envs": 16,
+              "block_steps": 499968,
+              "probe_steps": 5242880,
+              "value_weight": 0.5,
+              "entropy_weight": 0.005
+            }
+          }
         },
         "midpoint": {
-          "asterix": 0.35000000000000003
+          "asterix": {
+            "status": "complete",
+            "train_env_steps": 5242880,
+            "updates": 20480,
+            "train_settings": {
+              "hidden_sizes": [
+                256,
+                256
+              ],
+              "learning_rate": 0.001,
+              "gamma": 0.99,
+              "gradient_clip": 1.0,
+              "unroll_length": 16,
+              "batch_unrolls": 16,
+              "num_envs": 16,
+              "block_steps": 499968,
+              "probe_steps": 5242880,
+              "value_weight": 0.5,
+              "entropy_weight": 0.005
+            }
+          }
         },
         "final": {
-          "asterix": 0.44999999999999996
+          "asterix": {
+            "status": "complete",
+            "train_env_steps": 5242880,
+            "updates": 20480,
+            "train_settings": {
+              "hidden_sizes": [
+                256,
+                256
+              ],
+              "learning_rate": 0.001,
+              "gamma": 0.99,
+              "gradient_clip": 1.0,
+              "unroll_length": 16,
+              "batch_unrolls": 16,
+              "num_envs": 16,
+              "block_steps": 499968,
+              "probe_steps": 5242880,
+              "value_weight": 0.5,
+              "entropy_weight": 0.005
+            }
+          }
         }
       },
       "probe_checkpoint_blocks": {
         "initial": 0,
-        "midpoint": 30,
-        "final": 60
+        "midpoint": 7,
+        "final": 15
       },
-      "updates": 7680
+      "updates": 29295
     },
     "replay": {
       "status": "complete",
-      "completed_blocks": 60,
-      "compared_blocks": 60,
-      "compared_env_steps": 1966080,
+      "completed_blocks": 15,
+      "compared_blocks": 15,
+      "compared_env_steps": 7499520,
       "final_returns": {
-        "breakout": 5.6,
-        "space_invaders": 58.4,
-        "freeway": 17.8
+        "breakout": 5.7,
+        "space_invaders": 47.0,
+        "freeway": 23.8
       },
-      "average_normalized_performance": null,
+      "average_normalized_performance": 0.956052839540385,
       "forgetting_since_last_learning": {
-        "breakout": 0.20000000000000018,
-        "space_invaders": -14.0,
+        "breakout": -0.20000000000000018,
+        "space_invaders": 28.200000000000003,
         "freeway": 0.0
       },
-      "probe_auc": {},
+      "normalization_references": {
+        "breakout": {
+          "path": "results/scratch/breakout",
+          "training_env_steps": 2499840,
+          "scratch_env_steps": 2499840,
+          "scratch_return": 4.9,
+          "random_return": 0.6
+        },
+        "space_invaders": {
+          "path": "results/scratch/space_invaders",
+          "training_env_steps": 2499840,
+          "scratch_env_steps": 2499840,
+          "scratch_return": 40.7,
+          "random_return": 2.4
+        },
+        "freeway": {
+          "path": "results/scratch/freeway",
+          "training_env_steps": 2499840,
+          "scratch_env_steps": 2499840,
+          "scratch_return": 45.7,
+          "random_return": 0.3
+        }
+      },
+      "probes": {},
       "probe_checkpoint_blocks": {},
-      "updates": 7680
+      "updates": 29295
     },
     "clear": {
       "status": "complete",
-      "completed_blocks": 60,
-      "compared_blocks": 60,
-      "compared_env_steps": 1966080,
+      "completed_blocks": 15,
+      "compared_blocks": 15,
+      "compared_env_steps": 7499520,
       "final_returns": {
-        "breakout": 5.6,
-        "space_invaders": 34.4,
-        "freeway": 13.0
+        "breakout": 5.7,
+        "space_invaders": 25.8,
+        "freeway": 23.5
       },
-      "average_normalized_performance": null,
+      "average_normalized_performance": 0.7693419283093968,
       "forgetting_since_last_learning": {
-        "breakout": 0.0,
-        "space_invaders": 39.199999999999996,
+        "breakout": -0.20000000000000018,
+        "space_invaders": -4.5,
         "freeway": 0.0
       },
-      "probe_auc": {
+      "normalization_references": {
+        "breakout": {
+          "path": "results/scratch/breakout",
+          "training_env_steps": 2499840,
+          "scratch_env_steps": 2499840,
+          "scratch_return": 4.9,
+          "random_return": 0.6
+        },
+        "space_invaders": {
+          "path": "results/scratch/space_invaders",
+          "training_env_steps": 2499840,
+          "scratch_env_steps": 2499840,
+          "scratch_return": 40.7,
+          "random_return": 2.4
+        },
+        "freeway": {
+          "path": "results/scratch/freeway",
+          "training_env_steps": 2499840,
+          "scratch_env_steps": 2499840,
+          "scratch_return": 45.7,
+          "random_return": 0.3
+        }
+      },
+      "probes": {
         "initial": {
-          "asterix": 0.5
+          "asterix": {
+            "status": "complete",
+            "train_env_steps": 5242880,
+            "updates": 20480,
+            "train_settings": {
+              "hidden_sizes": [
+                256,
+                256
+              ],
+              "learning_rate": 0.001,
+              "gamma": 0.99,
+              "gradient_clip": 1.0,
+              "unroll_length": 16,
+              "batch_unrolls": 16,
+              "num_envs": 16,
+              "block_steps": 499968,
+              "probe_steps": 5242880,
+              "value_weight": 0.5,
+              "entropy_weight": 0.005
+            }
+          }
         },
         "midpoint": {
-          "asterix": 0.5750000000000001
+          "asterix": {
+            "status": "complete",
+            "train_env_steps": 5242880,
+            "updates": 20480,
+            "train_settings": {
+              "hidden_sizes": [
+                256,
+                256
+              ],
+              "learning_rate": 0.001,
+              "gamma": 0.99,
+              "gradient_clip": 1.0,
+              "unroll_length": 16,
+              "batch_unrolls": 16,
+              "num_envs": 16,
+              "block_steps": 499968,
+              "probe_steps": 5242880,
+              "value_weight": 0.5,
+              "entropy_weight": 0.005
+            }
+          }
         },
         "final": {
-          "asterix": 0.35000000000000003
+          "asterix": {
+            "status": "complete",
+            "train_env_steps": 5242880,
+            "updates": 20480,
+            "train_settings": {
+              "hidden_sizes": [
+                256,
+                256
+              ],
+              "learning_rate": 0.001,
+              "gamma": 0.99,
+              "gradient_clip": 1.0,
+              "unroll_length": 16,
+              "batch_unrolls": 16,
+              "num_envs": 16,
+              "block_steps": 499968,
+              "probe_steps": 5242880,
+              "value_weight": 0.5,
+              "entropy_weight": 0.005
+            }
+          }
         }
       },
       "probe_checkpoint_blocks": {
         "initial": 0,
-        "midpoint": 30,
-        "final": 60
+        "midpoint": 7,
+        "final": 15
       },
-      "updates": 7680
+      "updates": 29295
     },
     "clear_cbp": {
       "status": "complete",
-      "completed_blocks": 60,
-      "compared_blocks": 60,
-      "compared_env_steps": 1966080,
+      "completed_blocks": 15,
+      "compared_blocks": 15,
+      "compared_env_steps": 7499520,
       "final_returns": {
-        "breakout": 5.6,
-        "space_invaders": 37.4,
-        "freeway": 0.0
+        "breakout": 5.4,
+        "space_invaders": 28.2,
+        "freeway": 23.4
       },
-      "average_normalized_performance": null,
+      "average_normalized_performance": 0.7662396284248366,
       "forgetting_since_last_learning": {
-        "breakout": 0.0,
-        "space_invaders": 26.200000000000003,
+        "breakout": 0.09999999999999964,
+        "space_invaders": 22.400000000000002,
         "freeway": 0.0
       },
-      "probe_auc": {
+      "normalization_references": {
+        "breakout": {
+          "path": "results/scratch/breakout",
+          "training_env_steps": 2499840,
+          "scratch_env_steps": 2499840,
+          "scratch_return": 4.9,
+          "random_return": 0.6
+        },
+        "space_invaders": {
+          "path": "results/scratch/space_invaders",
+          "training_env_steps": 2499840,
+          "scratch_env_steps": 2499840,
+          "scratch_return": 40.7,
+          "random_return": 2.4
+        },
+        "freeway": {
+          "path": "results/scratch/freeway",
+          "training_env_steps": 2499840,
+          "scratch_env_steps": 2499840,
+          "scratch_return": 45.7,
+          "random_return": 0.3
+        }
+      },
+      "probes": {
         "initial": {
-          "asterix": 0.5
+          "asterix": {
+            "status": "complete",
+            "train_env_steps": 5242880,
+            "updates": 20480,
+            "train_settings": {
+              "hidden_sizes": [
+                256,
+                256
+              ],
+              "learning_rate": 0.001,
+              "gamma": 0.99,
+              "gradient_clip": 1.0,
+              "unroll_length": 16,
+              "batch_unrolls": 16,
+              "num_envs": 16,
+              "block_steps": 499968,
+              "probe_steps": 5242880,
+              "value_weight": 0.5,
+              "entropy_weight": 0.005
+            }
+          }
         },
         "midpoint": {
-          "asterix": 0.625
+          "asterix": {
+            "status": "complete",
+            "train_env_steps": 5242880,
+            "updates": 20480,
+            "train_settings": {
+              "hidden_sizes": [
+                256,
+                256
+              ],
+              "learning_rate": 0.001,
+              "gamma": 0.99,
+              "gradient_clip": 1.0,
+              "unroll_length": 16,
+              "batch_unrolls": 16,
+              "num_envs": 16,
+              "block_steps": 499968,
+              "probe_steps": 5242880,
+              "value_weight": 0.5,
+              "entropy_weight": 0.005
+            }
+          }
         },
         "final": {
-          "asterix": 0.4
+          "asterix": {
+            "status": "complete",
+            "train_env_steps": 5242880,
+            "updates": 20480,
+            "train_settings": {
+              "hidden_sizes": [
+                256,
+                256
+              ],
+              "learning_rate": 0.001,
+              "gamma": 0.99,
+              "gradient_clip": 1.0,
+              "unroll_length": 16,
+              "batch_unrolls": 16,
+              "num_envs": 16,
+              "block_steps": 499968,
+              "probe_steps": 5242880,
+              "value_weight": 0.5,
+              "entropy_weight": 0.005
+            }
+          }
         }
       },
       "probe_checkpoint_blocks": {
         "initial": 0,
-        "midpoint": 30,
-        "final": 60
+        "midpoint": 7,
+        "final": 15
       },
-      "updates": 7680
+      "updates": 29295
     }
   },
   "qualification": {
     "qualified": false,
     "all_pilots_complete": true,
     "learnable": false,
-    "forgetting_demonstrated": false,
-    "plasticity_loss_demonstrated": false,
-    "probe_auc_threshold_met": true,
-    "probe_reference_learnable": {
-      "asterix": false
-    },
+    "forgetting_demonstrated": true,
     "scratch_returns": {
-      "breakout": 0.4,
-      "space_invaders": 2.8,
-      "freeway": 13.4
+      "breakout": 4.6,
+      "space_invaders": 21.2,
+      "freeway": 26.1
     },
     "joint_returns": {
-      "breakout": 0.4,
-      "space_invaders": 6.0,
-      "freeway": 0.0
+      "breakout": 4.3,
+      "space_invaders": 22.8,
+      "freeway": 9.7
     },
     "random_scores": {
       "breakout": {
-        "return": 0.2,
+        "return": 0.6,
         "episodes": [
           0.0,
+          3.0,
           1.0,
           0.0,
           0.0,
+          0.0,
+          1.0,
+          1.0,
+          0.0,
           0.0
         ],
-        "env_steps": 40
+        "env_steps": 122
       },
       "space_invaders": {
-        "return": 3.6,
+        "return": 2.4,
         "episodes": [
           1.0,
+          1.0,
           2.0,
-          3.0,
           2.0,
-          10.0
+          8.0,
+          0.0,
+          2.0,
+          4.0,
+          2.0,
+          2.0
         ],
-        "env_steps": 284
+        "env_steps": 537
       },
       "freeway": {
-        "return": 0.8,
+        "return": 0.3,
         "episodes": [
           0.0,
-          2.0,
           0.0,
-          1.0,
-          1.0
-        ],
-        "env_steps": 12500
-      },
-      "asterix": {
-        "return": 0.2,
-        "episodes": [
           0.0,
           1.0,
           0.0,
           0.0,
+          1.0,
+          0.0,
+          1.0,
           0.0
         ],
-        "env_steps": 245
+        "env_steps": 25000
       }
     },
     "forgetting_tasks": [
-      "breakout"
+      "breakout",
+      "space_invaders",
+      "freeway"
     ],
-    "probe_auc_deficits": {
-      "asterix": 0.4999999999999999
-    },
-    "fresh_reference": "Initial weights equal the seeded scratch network; the initial probes are the paired scratch reference.",
+    "plasticity_assessment": "descriptive probe curves only",
     "jobs": [
       {
-        "out": "results/showcase/pilot/minatar/scratch/breakout",
+        "out": "tmp/stability-plasticity/pilot/minatar/scratch/breakout",
         "status": "complete",
         "completed_blocks": 1,
-        "seconds": 8.05122423171997,
-        "transitions_per_second": 4069.940055936043,
+        "seconds": 116.01613712310791,
+        "transitions_per_second": 4309.469461730744,
         "gpu_peak_bytes": 35667456
       },
       {
-        "out": "results/showcase/pilot/minatar/scratch/space_invaders",
+        "out": "tmp/stability-plasticity/pilot/minatar/scratch/freeway",
         "status": "complete",
         "completed_blocks": 1,
-        "seconds": 9.753586769104004,
-        "transitions_per_second": 3359.584609817356,
+        "seconds": 117.5805389881134,
+        "transitions_per_second": 4252.132234659542,
         "gpu_peak_bytes": 35667456
       },
       {
-        "out": "results/showcase/pilot/minatar/scratch/freeway",
+        "out": "tmp/stability-plasticity/pilot/minatar/scratch/space_invaders",
         "status": "complete",
         "completed_blocks": 1,
-        "seconds": 14.063968658447266,
-        "transitions_per_second": 2329.925556277353,
+        "seconds": 141.9901556968689,
+        "transitions_per_second": 3521.1455156607385,
         "gpu_peak_bytes": 35667456
       },
       {
-        "out": "results/showcase/pilot/minatar/multitask",
+        "out": "tmp/stability-plasticity/pilot/minatar/multitask",
         "status": "complete",
         "completed_blocks": 1,
-        "seconds": 15.323891162872314,
-        "transitions_per_second": 6415.080801290021,
+        "seconds": 254.86562728881836,
+        "transitions_per_second": 5885.077622885104,
         "gpu_peak_bytes": 35667456
       },
       {
-        "out": "results/showcase/pilot/minatar/finetune",
+        "out": "tmp/stability-plasticity/pilot/minatar/finetune",
         "status": "complete",
         "completed_blocks": 6,
-        "seconds": 46.3318088054657,
-        "transitions_per_second": 4243.47775467826,
+        "seconds": 697.8278810977936,
+        "transitions_per_second": 4298.7792280251515,
         "gpu_peak_bytes": 49638912
       }
     ]
   },
   "provenance": {
     "schema": 1,
-    "started_at": 1789074721.3364613,
-    "deadline": 1789078321.3364613,
-    "max_seconds": 3600,
+    "started_at": 1789214612.5403962,
     "seed": 0,
-    "git_revision": "cec3eda2aa4be0b1ab91029981ed1e2eb3353ea0",
+    "git_revision": "190cb54fdcfb63ca63a82967acbd3fab43713f6e",
     "working_tree_dirty": true,
-    "source_sha256": "bed011cb8f64d71b4d00bce3ca9a1eb4aab5c33bb0cc7e0ef1008fe1f876da5a",
+    "source_sha256": "8dc572fcae4dac8e1ebb88826c572dd6b6a209978806401f48ad292489adc187",
     "versions": {
       "python": "3.10.12",
       "gymnasium": "1.3.0",
@@ -300,760 +651,493 @@
       "minatar": "1.0.15"
     },
     "gpu": "NVIDIA GeForce RTX 3090",
-    "status": "inconclusive",
-    "main_jobs": [
-      {
-        "out": "results/showcase/main/finetune",
-        "status": "complete",
-        "completed_blocks": 60,
-        "seconds": 523.6054003238678,
-        "transitions_per_second": 3754.8886982141753,
-        "gpu_peak_bytes": 49638912
-      },
-      {
-        "out": "results/showcase/main/cbp",
-        "status": "complete",
-        "completed_blocks": 60,
-        "seconds": 541.4848902225494,
-        "transitions_per_second": 3630.904639263238,
-        "gpu_peak_bytes": 49651200
-      },
-      {
-        "out": "results/showcase/main/replay",
-        "status": "complete",
-        "completed_blocks": 60,
-        "seconds": 587.1827871799469,
-        "transitions_per_second": 3348.3270336354035,
-        "gpu_peak_bytes": 35667456
-      },
-      {
-        "out": "results/showcase/main/clear",
-        "status": "complete",
-        "completed_blocks": 60,
-        "seconds": 594.5495388507843,
-        "transitions_per_second": 3306.8396685670164,
-        "gpu_peak_bytes": 49638912
-      },
-      {
-        "out": "results/showcase/main/clear_cbp",
-        "status": "complete",
-        "completed_blocks": 60,
-        "seconds": 408.58074140548706,
-        "transitions_per_second": 4811.97423362842,
-        "gpu_peak_bytes": 49651200
-      }
-    ],
-    "suite": "minatar",
-    "qualified": false,
-    "selected_cycles": 20,
-    "workers": 4,
-    "elapsed_seconds": 1245.8290846347809,
-    "budget_respected": true,
-    "workspace": "tmp/showcase",
+    "status": "complete",
+    "workspace": "tmp/stability-plasticity",
     "qualification_history": {
       "minatar": {
         "qualified": false,
         "all_pilots_complete": true,
         "learnable": false,
-        "forgetting_demonstrated": false,
-        "plasticity_loss_demonstrated": false,
-        "probe_auc_threshold_met": true,
-        "probe_reference_learnable": {
-          "asterix": false
-        },
+        "forgetting_demonstrated": true,
         "scratch_returns": {
-          "breakout": 0.4,
-          "space_invaders": 2.8,
-          "freeway": 13.4
+          "breakout": 4.6,
+          "space_invaders": 21.2,
+          "freeway": 26.1
         },
         "joint_returns": {
-          "breakout": 0.4,
-          "space_invaders": 6.0,
-          "freeway": 0.0
+          "breakout": 4.3,
+          "space_invaders": 22.8,
+          "freeway": 9.7
         },
         "random_scores": {
           "breakout": {
-            "return": 0.2,
+            "return": 0.6,
             "episodes": [
               0.0,
+              3.0,
               1.0,
               0.0,
               0.0,
+              0.0,
+              1.0,
+              1.0,
+              0.0,
               0.0
             ],
-            "env_steps": 40
+            "env_steps": 122
           },
           "space_invaders": {
-            "return": 3.6,
+            "return": 2.4,
             "episodes": [
               1.0,
+              1.0,
               2.0,
-              3.0,
               2.0,
-              10.0
+              8.0,
+              0.0,
+              2.0,
+              4.0,
+              2.0,
+              2.0
             ],
-            "env_steps": 284
+            "env_steps": 537
           },
           "freeway": {
-            "return": 0.8,
+            "return": 0.3,
             "episodes": [
               0.0,
-              2.0,
               0.0,
-              1.0,
-              1.0
-            ],
-            "env_steps": 12500
-          },
-          "asterix": {
-            "return": 0.2,
-            "episodes": [
               0.0,
               1.0,
               0.0,
               0.0,
+              1.0,
+              0.0,
+              1.0,
               0.0
             ],
-            "env_steps": 245
+            "env_steps": 25000
           }
         },
         "forgetting_tasks": [
-          "breakout"
+          "breakout",
+          "space_invaders",
+          "freeway"
         ],
-        "probe_auc_deficits": {
-          "asterix": 0.4999999999999999
-        },
         "retention_drops": [
           {
             "block": 1,
             "task": "breakout",
             "since_block": 0,
-            "drop": 0.4,
-            "return": 0.0
+            "drop": 3.9999999999999996,
+            "return": 0.6
           },
           {
             "block": 2,
             "task": "breakout",
             "since_block": 0,
-            "drop": 0.4,
-            "return": 0.0
+            "drop": 3.6999999999999997,
+            "return": 0.9
           },
           {
             "block": 2,
             "task": "space_invaders",
             "since_block": 1,
-            "drop": 0.0,
-            "return": 0.0
+            "drop": 12.5,
+            "return": 2.7
           },
           {
             "block": 3,
             "task": "space_invaders",
             "since_block": 1,
-            "drop": 0.0,
-            "return": 0.0
+            "drop": 11.1,
+            "return": 4.1
           },
           {
             "block": 3,
             "task": "freeway",
             "since_block": 2,
-            "drop": 0.0,
-            "return": 0.0
+            "drop": 6.600000000000001,
+            "return": 19.2
           },
           {
             "block": 4,
             "task": "breakout",
             "since_block": 3,
-            "drop": 0.9999999999999999,
-            "return": 0.4
+            "drop": 1.8999999999999995,
+            "return": 2.7
           },
           {
             "block": 4,
             "task": "freeway",
             "since_block": 2,
-            "drop": 0.0,
-            "return": 0.0
+            "drop": 23.2,
+            "return": 2.6
           },
           {
             "block": 5,
             "task": "breakout",
             "since_block": 3,
-            "drop": 0.9999999999999999,
-            "return": 0.4
+            "drop": 0.5999999999999996,
+            "return": 4.0
           },
           {
             "block": 5,
             "task": "space_invaders",
             "since_block": 4,
-            "drop": 2.0,
-            "return": 3.0
+            "drop": -2.5,
+            "return": 23.1
           }
         ],
-        "fresh_reference": "Initial weights equal the seeded scratch network; the initial probes are the paired scratch reference.",
+        "plasticity_assessment": "descriptive probe curves only",
         "jobs": [
           {
-            "out": "results/showcase/pilot/minatar/scratch/breakout",
+            "out": "tmp/stability-plasticity/pilot/minatar/scratch/breakout",
             "status": "complete",
             "completed_blocks": 1,
-            "seconds": 8.05122423171997,
-            "transitions_per_second": 4069.940055936043,
+            "seconds": 116.01613712310791,
+            "transitions_per_second": 4309.469461730744,
             "gpu_peak_bytes": 35667456
           },
           {
-            "out": "results/showcase/pilot/minatar/scratch/space_invaders",
+            "out": "tmp/stability-plasticity/pilot/minatar/scratch/freeway",
             "status": "complete",
             "completed_blocks": 1,
-            "seconds": 9.753586769104004,
-            "transitions_per_second": 3359.584609817356,
+            "seconds": 117.5805389881134,
+            "transitions_per_second": 4252.132234659542,
             "gpu_peak_bytes": 35667456
           },
           {
-            "out": "results/showcase/pilot/minatar/scratch/freeway",
+            "out": "tmp/stability-plasticity/pilot/minatar/scratch/space_invaders",
             "status": "complete",
             "completed_blocks": 1,
-            "seconds": 14.063968658447266,
-            "transitions_per_second": 2329.925556277353,
+            "seconds": 141.9901556968689,
+            "transitions_per_second": 3521.1455156607385,
             "gpu_peak_bytes": 35667456
           },
           {
-            "out": "results/showcase/pilot/minatar/multitask",
+            "out": "tmp/stability-plasticity/pilot/minatar/multitask",
             "status": "complete",
             "completed_blocks": 1,
-            "seconds": 15.323891162872314,
-            "transitions_per_second": 6415.080801290021,
+            "seconds": 254.86562728881836,
+            "transitions_per_second": 5885.077622885104,
             "gpu_peak_bytes": 35667456
           },
           {
-            "out": "results/showcase/pilot/minatar/finetune",
+            "out": "tmp/stability-plasticity/pilot/minatar/finetune",
             "status": "complete",
             "completed_blocks": 6,
-            "seconds": 46.3318088054657,
-            "transitions_per_second": 4243.47775467826,
+            "seconds": 697.8278810977936,
+            "transitions_per_second": 4298.7792280251515,
             "gpu_peak_bytes": 49638912
-          }
-        ]
-      },
-      "cartpole": {
-        "qualified": false,
-        "all_pilots_complete": true,
-        "learnable": false,
-        "forgetting_demonstrated": true,
-        "plasticity_loss_demonstrated": false,
-        "probe_auc_threshold_met": false,
-        "probe_reference_learnable": {
-          "probe_a": true,
-          "probe_a_reverse": true,
-          "probe_b": true,
-          "probe_b_reverse": true
-        },
-        "scratch_returns": {
-          "identity": 236.0,
-          "identity_reverse": 403.2,
-          "swapped": 384.4,
-          "swapped_reverse": 280.4
-        },
-        "joint_returns": {
-          "identity": 393.8,
-          "identity_reverse": 500.0,
-          "swapped": 363.6,
-          "swapped_reverse": 210.4
-        },
-        "random_scores": {
-          "identity": {
-            "return": 29.8,
-            "episodes": [
-              17.0,
-              55.0,
-              9.0,
-              44.0,
-              24.0
-            ],
-            "env_steps": 149
-          },
-          "identity_reverse": {
-            "return": 22.8,
-            "episodes": [
-              14.0,
-              20.0,
-              11.0,
-              28.0,
-              41.0
-            ],
-            "env_steps": 114
-          },
-          "swapped": {
-            "return": 15.2,
-            "episodes": [
-              17.0,
-              18.0,
-              12.0,
-              11.0,
-              18.0
-            ],
-            "env_steps": 76
-          },
-          "swapped_reverse": {
-            "return": 23.2,
-            "episodes": [
-              20.0,
-              19.0,
-              21.0,
-              16.0,
-              40.0
-            ],
-            "env_steps": 116
-          },
-          "probe_a": {
-            "return": 26.4,
-            "episodes": [
-              21.0,
-              22.0,
-              22.0,
-              11.0,
-              56.0
-            ],
-            "env_steps": 132
-          },
-          "probe_a_reverse": {
-            "return": 21.0,
-            "episodes": [
-              24.0,
-              23.0,
-              19.0,
-              17.0,
-              22.0
-            ],
-            "env_steps": 105
-          },
-          "probe_b": {
-            "return": 13.4,
-            "episodes": [
-              12.0,
-              16.0,
-              12.0,
-              13.0,
-              14.0
-            ],
-            "env_steps": 67
-          },
-          "probe_b_reverse": {
-            "return": 27.6,
-            "episodes": [
-              47.0,
-              40.0,
-              12.0,
-              11.0,
-              28.0
-            ],
-            "env_steps": 138
-          }
-        },
-        "forgetting_tasks": [
-          "identity",
-          "identity_reverse",
-          "swapped",
-          "swapped_reverse"
-        ],
-        "probe_auc_deficits": {
-          "probe_a": -0.40895,
-          "probe_a_reverse": -0.07500000000000005,
-          "probe_b": -0.41670000000000007,
-          "probe_b_reverse": -0.012699999999999932
-        },
-        "retention_drops": [
-          {
-            "block": 1,
-            "task": "identity",
-            "since_block": 0,
-            "drop": 226.6,
-            "return": 9.4
-          },
-          {
-            "block": 2,
-            "task": "identity",
-            "since_block": 0,
-            "drop": 227.0,
-            "return": 9.0
-          },
-          {
-            "block": 2,
-            "task": "identity_reverse",
-            "since_block": 1,
-            "drop": 82.79999999999998,
-            "return": 127.4
-          },
-          {
-            "block": 3,
-            "task": "identity",
-            "since_block": 0,
-            "drop": 226.6,
-            "return": 9.4
-          },
-          {
-            "block": 3,
-            "task": "identity_reverse",
-            "since_block": 1,
-            "drop": 29.19999999999999,
-            "return": 181.0
-          },
-          {
-            "block": 3,
-            "task": "swapped",
-            "since_block": 2,
-            "drop": 83.80000000000001,
-            "return": 224.2
-          },
-          {
-            "block": 4,
-            "task": "identity_reverse",
-            "since_block": 1,
-            "drop": 201.39999999999998,
-            "return": 8.8
-          },
-          {
-            "block": 4,
-            "task": "swapped",
-            "since_block": 2,
-            "drop": 282.0,
-            "return": 26.0
-          },
-          {
-            "block": 4,
-            "task": "swapped_reverse",
-            "since_block": 3,
-            "drop": -119.79999999999998,
-            "return": 287.2
-          },
-          {
-            "block": 5,
-            "task": "identity",
-            "since_block": 4,
-            "drop": 94.6,
-            "return": 66.0
-          },
-          {
-            "block": 5,
-            "task": "swapped",
-            "since_block": 2,
-            "drop": -60.0,
-            "return": 368.0
-          },
-          {
-            "block": 5,
-            "task": "swapped_reverse",
-            "since_block": 3,
-            "drop": -332.6,
-            "return": 500.0
-          },
-          {
-            "block": 6,
-            "task": "identity",
-            "since_block": 4,
-            "drop": 151.2,
-            "return": 9.4
-          },
-          {
-            "block": 6,
-            "task": "identity_reverse",
-            "since_block": 5,
-            "drop": -59.0,
-            "return": 270.0
-          },
-          {
-            "block": 6,
-            "task": "swapped_reverse",
-            "since_block": 3,
-            "drop": 153.20000000000002,
-            "return": 14.2
-          },
-          {
-            "block": 7,
-            "task": "identity",
-            "since_block": 4,
-            "drop": 54.19999999999999,
-            "return": 106.4
-          },
-          {
-            "block": 7,
-            "task": "identity_reverse",
-            "since_block": 5,
-            "drop": -8.199999999999989,
-            "return": 219.2
-          },
-          {
-            "block": 7,
-            "task": "swapped",
-            "since_block": 6,
-            "drop": -315.0,
-            "return": 500.0
-          },
-          {
-            "block": 8,
-            "task": "identity_reverse",
-            "since_block": 5,
-            "drop": 17.0,
-            "return": 194.0
-          },
-          {
-            "block": 8,
-            "task": "swapped",
-            "since_block": 6,
-            "drop": -315.0,
-            "return": 500.0
-          },
-          {
-            "block": 8,
-            "task": "swapped_reverse",
-            "since_block": 7,
-            "drop": 48.80000000000001,
-            "return": 154.6
-          },
-          {
-            "block": 9,
-            "task": "identity",
-            "since_block": 8,
-            "drop": 173.8,
-            "return": 139.2
-          },
-          {
-            "block": 9,
-            "task": "swapped",
-            "since_block": 6,
-            "drop": -315.0,
-            "return": 500.0
-          },
-          {
-            "block": 9,
-            "task": "swapped_reverse",
-            "since_block": 7,
-            "drop": 19.599999999999994,
-            "return": 183.8
-          },
-          {
-            "block": 10,
-            "task": "identity",
-            "since_block": 8,
-            "drop": 207.8,
-            "return": 105.2
-          },
-          {
-            "block": 10,
-            "task": "identity_reverse",
-            "since_block": 9,
-            "drop": 153.39999999999998,
-            "return": 346.6
-          },
-          {
-            "block": 10,
-            "task": "swapped_reverse",
-            "since_block": 7,
-            "drop": 7.599999999999994,
-            "return": 195.8
-          },
-          {
-            "block": 11,
-            "task": "identity",
-            "since_block": 8,
-            "drop": 198.2,
-            "return": 114.8
-          },
-          {
-            "block": 11,
-            "task": "identity_reverse",
-            "since_block": 9,
-            "drop": 0.0,
-            "return": 500.0
-          },
-          {
-            "block": 11,
-            "task": "swapped",
-            "since_block": 10,
-            "drop": 116.6,
-            "return": 221.6
-          },
-          {
-            "block": 12,
-            "task": "identity_reverse",
-            "since_block": 9,
-            "drop": 330.8,
-            "return": 169.2
-          },
-          {
-            "block": 12,
-            "task": "swapped",
-            "since_block": 10,
-            "drop": 199.79999999999998,
-            "return": 138.4
-          },
-          {
-            "block": 12,
-            "task": "swapped_reverse",
-            "since_block": 11,
-            "drop": 44.599999999999994,
-            "return": 131.6
-          },
-          {
-            "block": 13,
-            "task": "identity",
-            "since_block": 12,
-            "drop": -187.2,
-            "return": 370.0
-          },
-          {
-            "block": 13,
-            "task": "swapped",
-            "since_block": 10,
-            "drop": 190.79999999999998,
-            "return": 147.4
-          },
-          {
-            "block": 13,
-            "task": "swapped_reverse",
-            "since_block": 11,
-            "drop": 23.799999999999983,
-            "return": 152.4
-          },
-          {
-            "block": 14,
-            "task": "identity",
-            "since_block": 12,
-            "drop": -317.2,
-            "return": 500.0
-          },
-          {
-            "block": 14,
-            "task": "identity_reverse",
-            "since_block": 13,
-            "drop": 291.6,
-            "return": 208.4
-          },
-          {
-            "block": 14,
-            "task": "swapped_reverse",
-            "since_block": 11,
-            "drop": -92.60000000000002,
-            "return": 268.8
-          },
-          {
-            "block": 15,
-            "task": "identity",
-            "since_block": 12,
-            "drop": -317.2,
-            "return": 500.0
-          },
-          {
-            "block": 15,
-            "task": "identity_reverse",
-            "since_block": 13,
-            "drop": 296.6,
-            "return": 203.4
-          },
-          {
-            "block": 15,
-            "task": "swapped",
-            "since_block": 14,
-            "drop": -259.0,
-            "return": 500.0
-          }
-        ],
-        "fresh_reference": "Initial weights equal the seeded scratch network; the initial probes are the paired scratch reference.",
-        "jobs": [
-          {
-            "out": "results/showcase/pilot/cartpole/scratch/identity",
-            "status": "complete",
-            "completed_blocks": 1,
-            "seconds": 4.665497541427612,
-            "transitions_per_second": 7023.473854403362,
-            "gpu_peak_bytes": 22635520
-          },
-          {
-            "out": "results/showcase/pilot/cartpole/scratch/identity_reverse",
-            "status": "complete",
-            "completed_blocks": 1,
-            "seconds": 4.865872859954834,
-            "transitions_per_second": 6734.249114824624,
-            "gpu_peak_bytes": 22635520
-          },
-          {
-            "out": "results/showcase/pilot/cartpole/scratch/swapped",
-            "status": "complete",
-            "completed_blocks": 1,
-            "seconds": 5.126063108444214,
-            "transitions_per_second": 6392.430078752045,
-            "gpu_peak_bytes": 22635520
-          },
-          {
-            "out": "results/showcase/pilot/cartpole/scratch/swapped_reverse",
-            "status": "complete",
-            "completed_blocks": 1,
-            "seconds": 4.186197280883789,
-            "transitions_per_second": 7827.6291826079505,
-            "gpu_peak_bytes": 22635520
-          },
-          {
-            "out": "results/showcase/pilot/cartpole/multitask",
-            "status": "complete",
-            "completed_blocks": 1,
-            "seconds": 14.603312730789185,
-            "transitions_per_second": 8975.497711806975,
-            "gpu_peak_bytes": 22831616
-          },
-          {
-            "out": "results/showcase/pilot/cartpole/finetune",
-            "status": "complete",
-            "completed_blocks": 16,
-            "seconds": 97.29303431510925,
-            "transitions_per_second": 5388.751658232331,
-            "gpu_peak_bytes": 26042880
           }
         ]
       }
     },
-    "original_source_archive_in_git": "3e6189e0d141e61086d1e6060dc5b250bb3b4978:results/showcase/source.zip"
+    "main_jobs": [
+      {
+        "out": "results/finetune",
+        "status": "complete",
+        "completed_blocks": 15,
+        "seconds": 2003.0623607635498,
+        "transitions_per_second": 3744.0272189734765,
+        "gpu_peak_bytes": 49638912
+      },
+      {
+        "out": "results/replay",
+        "status": "complete",
+        "completed_blocks": 15,
+        "seconds": 2024.602665424347,
+        "transitions_per_second": 3704.1934835288466,
+        "gpu_peak_bytes": 35667456
+      },
+      {
+        "out": "results/clear",
+        "status": "complete",
+        "completed_blocks": 15,
+        "seconds": 2113.239841938019,
+        "transitions_per_second": 3548.8257656179285,
+        "gpu_peak_bytes": 49638912
+      },
+      {
+        "out": "results/cbp",
+        "status": "complete",
+        "completed_blocks": 15,
+        "seconds": 2187.269470691681,
+        "transitions_per_second": 3428.713334360409,
+        "gpu_peak_bytes": 49651200
+      },
+      {
+        "out": "results/scratch/breakout",
+        "status": "complete",
+        "completed_blocks": 5,
+        "seconds": 574.3356368541718,
+        "transitions_per_second": 4352.576855046745,
+        "gpu_peak_bytes": 35667456
+      },
+      {
+        "out": "results/scratch/freeway",
+        "status": "complete",
+        "completed_blocks": 5,
+        "seconds": 575.1296787261963,
+        "transitions_per_second": 4346.567552446039,
+        "gpu_peak_bytes": 35667456
+      },
+      {
+        "out": "results/scratch/space_invaders",
+        "status": "complete",
+        "completed_blocks": 5,
+        "seconds": 740.7883336544037,
+        "transitions_per_second": 3374.567182595829,
+        "gpu_peak_bytes": 35667456
+      },
+      {
+        "out": "results/clear_cbp",
+        "status": "complete",
+        "completed_blocks": 15,
+        "seconds": 1862.7135996818542,
+        "transitions_per_second": 4026.1261856255815,
+        "gpu_peak_bytes": 49651200
+      },
+      {
+        "out": "results/multitask",
+        "status": "complete",
+        "completed_blocks": 5,
+        "seconds": 1382.059886455536,
+        "transitions_per_second": 5426.335047776728,
+        "gpu_peak_bytes": 35667456
+      }
+    ],
+    "suite": "minatar",
+    "qualified": false,
+    "cycles": 5,
+    "workers": 4,
+    "elapsed_seconds": 4880.213112354279
   },
   "audit": [
     {
       "arm": "finetune",
-      "block": 60,
+      "block": 15,
       "match": true,
       "scores": {
         "breakout": {
-          "return": 4.8,
+          "return": 5.0,
           "episodes": [
+            3.0,
+            6.0,
+            6.0,
+            6.0,
+            6.0,
+            6.0,
+            3.0,
+            6.0,
             5.0,
-            6.0,
-            6.0,
-            2.0,
-            5.0
+            3.0
           ],
-          "env_steps": 288
+          "env_steps": 608
         },
         "space_invaders": {
-          "return": 43.2,
+          "return": 28.2,
           "episodes": [
-            23.0,
-            70.0,
-            68.0,
-            46.0,
-            9.0
+            19.0,
+            14.0,
+            71.0,
+            26.0,
+            47.0,
+            15.0,
+            21.0,
+            37.0,
+            18.0,
+            14.0
           ],
-          "env_steps": 1672
+          "env_steps": 2487
         },
         "freeway": {
-          "return": 11.0,
+          "return": 27.2,
           "episodes": [
-            9.0,
+            28.0,
+            31.0,
+            25.0,
+            30.0,
+            37.0,
+            29.0,
             18.0,
-            5.0,
-            0.0,
-            23.0
+            26.0,
+            27.0,
+            21.0
           ],
-          "env_steps": 12500
+          "env_steps": 25000
         }
       }
     },
     {
       "arm": "cbp",
-      "block": 60,
+      "block": 15,
+      "match": true,
+      "scores": {
+        "breakout": {
+          "return": 5.7,
+          "episodes": [
+            5.0,
+            6.0,
+            6.0,
+            6.0,
+            6.0,
+            6.0,
+            6.0,
+            6.0,
+            5.0,
+            5.0
+          ],
+          "env_steps": 684
+        },
+        "space_invaders": {
+          "return": 35.6,
+          "episodes": [
+            43.0,
+            60.0,
+            45.0,
+            13.0,
+            49.0,
+            47.0,
+            17.0,
+            21.0,
+            39.0,
+            22.0
+          ],
+          "env_steps": 2874
+        },
+        "freeway": {
+          "return": 28.7,
+          "episodes": [
+            32.0,
+            28.0,
+            29.0,
+            33.0,
+            22.0,
+            32.0,
+            22.0,
+            26.0,
+            36.0,
+            27.0
+          ],
+          "env_steps": 25000
+        }
+      }
+    },
+    {
+      "arm": "replay",
+      "block": 15,
+      "match": true,
+      "scores": {
+        "breakout": {
+          "return": 5.7,
+          "episodes": [
+            5.0,
+            6.0,
+            6.0,
+            6.0,
+            6.0,
+            6.0,
+            6.0,
+            6.0,
+            5.0,
+            5.0
+          ],
+          "env_steps": 672
+        },
+        "space_invaders": {
+          "return": 47.0,
+          "episodes": [
+            37.0,
+            80.0,
+            20.0,
+            23.0,
+            56.0,
+            47.0,
+            59.0,
+            56.0,
+            78.0,
+            14.0
+          ],
+          "env_steps": 3632
+        },
+        "freeway": {
+          "return": 23.8,
+          "episodes": [
+            27.0,
+            17.0,
+            29.0,
+            34.0,
+            28.0,
+            12.0,
+            22.0,
+            28.0,
+            20.0,
+            21.0
+          ],
+          "env_steps": 25000
+        }
+      }
+    },
+    {
+      "arm": "clear",
+      "block": 15,
+      "match": true,
+      "scores": {
+        "breakout": {
+          "return": 5.7,
+          "episodes": [
+            5.0,
+            6.0,
+            6.0,
+            6.0,
+            6.0,
+            6.0,
+            6.0,
+            6.0,
+            5.0,
+            5.0
+          ],
+          "env_steps": 674
+        },
+        "space_invaders": {
+          "return": 25.8,
+          "episodes": [
+            16.0,
+            47.0,
+            18.0,
+            3.0,
+            16.0,
+            45.0,
+            27.0,
+            47.0,
+            16.0,
+            23.0
+          ],
+          "env_steps": 2570
+        },
+        "freeway": {
+          "return": 23.5,
+          "episodes": [
+            34.0,
+            27.0,
+            24.0,
+            14.0,
+            29.0,
+            13.0,
+            26.0,
+            22.0,
+            23.0,
+            23.0
+          ],
+          "env_steps": 25000
+        }
+      }
+    },
+    {
+      "arm": "clear_cbp",
+      "block": 15,
       "match": true,
       "scores": {
         "breakout": {
@@ -1061,142 +1145,87 @@
           "episodes": [
             5.0,
             6.0,
+            4.0,
+            6.0,
+            6.0,
+            6.0,
+            6.0,
             6.0,
             5.0,
-            5.0
+            4.0
           ],
-          "env_steps": 320
+          "env_steps": 642
         },
         "space_invaders": {
-          "return": 57.8,
+          "return": 28.2,
           "episodes": [
-            95.0,
-            21.0,
-            34.0,
-            93.0,
-            46.0
-          ],
-          "env_steps": 2306
-        },
-        "freeway": {
-          "return": 7.2,
-          "episodes": [
-            1.0,
-            8.0,
-            5.0,
-            0.0,
-            22.0
-          ],
-          "env_steps": 12500
-        }
-      }
-    },
-    {
-      "arm": "replay",
-      "block": 60,
-      "match": true,
-      "scores": {
-        "breakout": {
-          "return": 5.6,
-          "episodes": [
-            6.0,
-            5.0,
-            5.0,
-            6.0,
-            6.0
-          ],
-          "env_steps": 330
-        },
-        "space_invaders": {
-          "return": 58.4,
-          "episodes": [
-            95.0,
-            16.0,
-            65.0,
-            8.0,
-            108.0
-          ],
-          "env_steps": 2100
-        },
-        "freeway": {
-          "return": 17.8,
-          "episodes": [
+            53.0,
+            55.0,
             27.0,
-            26.0,
-            30.0,
-            0.0,
-            6.0
+            3.0,
+            3.0,
+            40.0,
+            7.0,
+            31.0,
+            3.0,
+            60.0
           ],
-          "env_steps": 12500
-        }
-      }
-    },
-    {
-      "arm": "clear",
-      "block": 60,
-      "match": true,
-      "scores": {
-        "breakout": {
-          "return": 5.6,
-          "episodes": [
-            6.0,
-            5.0,
-            5.0,
-            6.0,
-            6.0
-          ],
-          "env_steps": 330
-        },
-        "space_invaders": {
-          "return": 34.4,
-          "episodes": [
-            69.0,
-            23.0,
-            46.0,
-            8.0,
-            26.0
-          ],
-          "env_steps": 1378
+          "env_steps": 2137
         },
         "freeway": {
-          "return": 13.0,
+          "return": 23.4,
           "episodes": [
-            0.0,
-            18.0,
+            29.0,
             21.0,
+            25.0,
+            22.0,
+            27.0,
+            30.0,
             16.0,
-            10.0
+            16.0,
+            27.0,
+            21.0
           ],
-          "env_steps": 12500
+          "env_steps": 25000
         }
       }
     },
     {
-      "arm": "clear_cbp",
-      "block": 60,
+      "arm": "scratch/breakout",
+      "block": 4,
       "match": true,
       "scores": {
         "breakout": {
-          "return": 5.6,
+          "return": 4.9,
           "episodes": [
+            5.0,
+            2.0,
+            2.0,
+            6.0,
+            6.0,
+            6.0,
             6.0,
             5.0,
             5.0,
-            6.0,
             6.0
           ],
-          "env_steps": 330
+          "env_steps": 586
         },
         "space_invaders": {
-          "return": 37.4,
+          "return": 2.0,
           "episodes": [
-            23.0,
-            47.0,
-            47.0,
-            23.0,
-            47.0
+            2.0,
+            1.0,
+            3.0,
+            3.0,
+            2.0,
+            0.0,
+            1.0,
+            1.0,
+            4.0,
+            3.0
           ],
-          "env_steps": 1642
+          "env_steps": 318
         },
         "freeway": {
           "return": 0.0,
@@ -1205,9 +1234,179 @@
             0.0,
             0.0,
             0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
             0.0
           ],
-          "env_steps": 12500
+          "env_steps": 25000
+        }
+      }
+    },
+    {
+      "arm": "scratch/space_invaders",
+      "block": 4,
+      "match": true,
+      "scores": {
+        "breakout": {
+          "return": 0.3,
+          "episodes": [
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            1.0,
+            1.0,
+            0.0
+          ],
+          "env_steps": 90
+        },
+        "space_invaders": {
+          "return": 40.7,
+          "episodes": [
+            47.0,
+            22.0,
+            52.0,
+            48.0,
+            23.0,
+            48.0,
+            18.0,
+            59.0,
+            18.0,
+            72.0
+          ],
+          "env_steps": 3297
+        },
+        "freeway": {
+          "return": 0.0,
+          "episodes": [
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          "env_steps": 25000
+        }
+      }
+    },
+    {
+      "arm": "scratch/freeway",
+      "block": 4,
+      "match": true,
+      "scores": {
+        "breakout": {
+          "return": 0.4,
+          "episodes": [
+            0.0,
+            0.0,
+            0.0,
+            1.0,
+            1.0,
+            1.0,
+            1.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          "env_steps": 100
+        },
+        "space_invaders": {
+          "return": 2.3,
+          "episodes": [
+            1.0,
+            0.0,
+            2.0,
+            2.0,
+            2.0,
+            2.0,
+            5.0,
+            2.0,
+            2.0,
+            5.0
+          ],
+          "env_steps": 441
+        },
+        "freeway": {
+          "return": 45.7,
+          "episodes": [
+            48.0,
+            47.0,
+            47.0,
+            39.0,
+            47.0,
+            50.0,
+            47.0,
+            48.0,
+            47.0,
+            37.0
+          ],
+          "env_steps": 25000
+        }
+      }
+    },
+    {
+      "arm": "multitask",
+      "block": 4,
+      "match": true,
+      "scores": {
+        "breakout": {
+          "return": 4.7,
+          "episodes": [
+            6.0,
+            5.0,
+            5.0,
+            5.0,
+            3.0,
+            5.0,
+            5.0,
+            1.0,
+            6.0,
+            6.0
+          ],
+          "env_steps": 564
+        },
+        "space_invaders": {
+          "return": 89.2,
+          "episodes": [
+            118.0,
+            99.0,
+            73.0,
+            3.0,
+            92.0,
+            206.0,
+            44.0,
+            86.0,
+            121.0,
+            50.0
+          ],
+          "env_steps": 6317
+        },
+        "freeway": {
+          "return": 26.9,
+          "episodes": [
+            28.0,
+            30.0,
+            33.0,
+            26.0,
+            23.0,
+            22.0,
+            22.0,
+            32.0,
+            32.0,
+            21.0
+          ],
+          "env_steps": 25000
         }
       }
     }
@@ -1217,113 +1416,620 @@
       "task": "breakout",
       "path": "results/finetune/videos/breakout.gif",
       "return": 5.0,
-      "steps": 60
+      "steps": 62
     },
     {
       "task": "space_invaders",
       "path": "results/finetune/videos/space_invaders.gif",
-      "return": 23.0,
-      "steps": 213
+      "return": 25.0,
+      "steps": 222
     },
     {
       "task": "freeway",
       "path": "results/finetune/videos/freeway.gif",
-      "return": 9.0,
+      "return": 29.0,
       "steps": 2500
     },
     {
       "task": "breakout",
       "path": "results/cbp/videos/breakout.gif",
       "return": 5.0,
-      "steps": 60
+      "steps": 62
     },
     {
       "task": "space_invaders",
       "path": "results/cbp/videos/space_invaders.gif",
-      "return": 95.0,
-      "steps": 801
+      "return": 71.0,
+      "steps": 571
     },
     {
       "task": "freeway",
       "path": "results/cbp/videos/freeway.gif",
-      "return": 1.0,
+      "return": 24.0,
       "steps": 2500
     },
     {
       "task": "breakout",
       "path": "results/replay/videos/breakout.gif",
-      "return": 6.0,
-      "steps": 70
+      "return": 5.0,
+      "steps": 60
     },
     {
       "task": "space_invaders",
       "path": "results/replay/videos/space_invaders.gif",
-      "return": 95.0,
-      "steps": 703
+      "return": 34.0,
+      "steps": 257
     },
     {
       "task": "freeway",
       "path": "results/replay/videos/freeway.gif",
-      "return": 27.0,
+      "return": 9.0,
       "steps": 2500
     },
     {
       "task": "breakout",
       "path": "results/clear/videos/breakout.gif",
-      "return": 6.0,
-      "steps": 70
+      "return": 5.0,
+      "steps": 60
     },
     {
       "task": "space_invaders",
       "path": "results/clear/videos/space_invaders.gif",
-      "return": 69.0,
-      "steps": 538
+      "return": 38.0,
+      "steps": 338
     },
     {
       "task": "freeway",
       "path": "results/clear/videos/freeway.gif",
-      "return": 0.0,
+      "return": 21.0,
       "steps": 2500
     },
     {
       "task": "breakout",
       "path": "results/clear_cbp/videos/breakout.gif",
+      "return": 5.0,
+      "steps": 60
+    },
+    {
+      "task": "space_invaders",
+      "path": "results/clear_cbp/videos/space_invaders.gif",
+      "return": 35.0,
+      "steps": 278
+    },
+    {
+      "task": "freeway",
+      "path": "results/clear_cbp/videos/freeway.gif",
+      "return": 28.0,
+      "steps": 2500
+    },
+    {
+      "task": "breakout",
+      "path": "results/scratch/breakout/videos/breakout.gif",
+      "return": 5.0,
+      "steps": 60
+    },
+    {
+      "task": "space_invaders",
+      "path": "results/scratch/space_invaders/videos/space_invaders.gif",
+      "return": 48.0,
+      "steps": 377
+    },
+    {
+      "task": "freeway",
+      "path": "results/scratch/freeway/videos/freeway.gif",
+      "return": 49.0,
+      "steps": 2500
+    },
+    {
+      "task": "breakout",
+      "path": "results/multitask/videos/breakout.gif",
       "return": 6.0,
       "steps": 70
     },
     {
       "task": "space_invaders",
-      "path": "results/clear_cbp/videos/space_invaders.gif",
-      "return": 23.0,
-      "steps": 200
+      "path": "results/multitask/videos/space_invaders.gif",
+      "return": 137.0,
+      "steps": 1007
     },
     {
       "task": "freeway",
-      "path": "results/clear_cbp/videos/freeway.gif",
-      "return": 0.0,
+      "path": "results/multitask/videos/freeway.gif",
+      "return": 29.0,
       "steps": 2500
     }
   ],
+  "probe_refresh": {
+    "reference": "lr001_5m",
+    "started_at": 1789298362.6593432,
+    "config": {
+      "experiment": "stability-plasticity",
+      "seed": 0,
+      "suite": "minatar",
+      "output": "results",
+      "workers": "auto",
+      "arms": [
+        "finetune",
+        "cbp",
+        "replay",
+        "clear",
+        "clear_cbp"
+      ],
+      "cycles": 5,
+      "device": "cuda",
+      "smoke": false,
+      "train": {
+        "hidden_sizes": [
+          256,
+          256
+        ],
+        "learning_rate": 0.0003,
+        "gamma": 0.99,
+        "gradient_clip": 1.0,
+        "unroll_length": 16,
+        "batch_unrolls": 16,
+        "num_envs": 16,
+        "block_steps": 499968,
+        "probe_steps": 5242880,
+        "value_weight": 0.5,
+        "entropy_weight": 0.005
+      },
+      "probe_train": {
+        "learning_rate": 0.001,
+        "gamma": 0.99,
+        "entropy_weight": 0.005
+      },
+      "clear": {
+        "replay_ratio": 0.5,
+        "capacity": 100000,
+        "policy_cloning_weight": 0.01,
+        "value_cloning_weight": 0.005
+      },
+      "cbp": {
+        "utility": "contribution",
+        "replacement_rate": 0.0001,
+        "maturity_threshold": 1000,
+        "decay_rate": 0.99
+      },
+      "diagnostics": {
+        "window_steps": 1000,
+        "period": 1000,
+        "rank_period": 10000
+      },
+      "eval": {
+        "episodes": 10,
+        "period": 25000,
+        "clips": true,
+        "clip_stride": 4
+      }
+    },
+    "reference_source": {
+      "checkpoint": "tmp/stability-plasticity/checkpoints/finetune/block_0000.pt",
+      "sha256": "cec004a6c1de3ca0bacf4e31a3cea6aabda9d7d9d8f9c1ea8dbc4d0c380cd19e"
+    },
+    "tuning_trials": {
+      "lr001": {
+        "train_settings": {
+          "hidden_sizes": [
+            256,
+            256
+          ],
+          "learning_rate": 0.001,
+          "gamma": 0.99,
+          "gradient_clip": 1.0,
+          "unroll_length": 16,
+          "batch_unrolls": 16,
+          "num_envs": 16,
+          "block_steps": 499968,
+          "probe_steps": 524288,
+          "value_weight": 0.5,
+          "entropy_weight": 0.005
+        },
+        "transitions": 2097152,
+        "episodes": 25322,
+        "first1000": {
+          "mean_return": 0.521,
+          "zero_fraction": 0.647
+        },
+        "last1000": {
+          "mean_return": 1.929,
+          "zero_fraction": 0.276
+        }
+      },
+      "lr001_5m": {
+        "train_settings": {
+          "hidden_sizes": [
+            256,
+            256
+          ],
+          "learning_rate": 0.001,
+          "gamma": 0.99,
+          "gradient_clip": 1.0,
+          "unroll_length": 16,
+          "batch_unrolls": 16,
+          "num_envs": 16,
+          "block_steps": 499968,
+          "probe_steps": 524288,
+          "value_weight": 0.5,
+          "entropy_weight": 0.005,
+          "tuning_steps": 5242880
+        },
+        "transitions": 5242880,
+        "episodes": 49989,
+        "first1000": {
+          "mean_return": 0.521,
+          "zero_fraction": 0.647
+        },
+        "last1000": {
+          "mean_return": 4.916,
+          "zero_fraction": 0.116
+        }
+      },
+      "lr001_entropy02": {
+        "train_settings": {
+          "hidden_sizes": [
+            256,
+            256
+          ],
+          "learning_rate": 0.001,
+          "gamma": 0.99,
+          "gradient_clip": 1.0,
+          "unroll_length": 16,
+          "batch_unrolls": 16,
+          "num_envs": 16,
+          "block_steps": 499968,
+          "probe_steps": 524288,
+          "value_weight": 0.5,
+          "entropy_weight": 0.02
+        },
+        "transitions": 2097152,
+        "episodes": 25915,
+        "first1000": {
+          "mean_return": 0.47,
+          "zero_fraction": 0.674
+        },
+        "last1000": {
+          "mean_return": 2.029,
+          "zero_fraction": 0.282
+        }
+      },
+      "lr001_gamma095_5m": {
+        "train_settings": {
+          "hidden_sizes": [
+            256,
+            256
+          ],
+          "learning_rate": 0.001,
+          "gamma": 0.95,
+          "gradient_clip": 1.0,
+          "unroll_length": 16,
+          "batch_unrolls": 16,
+          "num_envs": 16,
+          "block_steps": 499968,
+          "probe_steps": 524288,
+          "value_weight": 0.5,
+          "entropy_weight": 0.005,
+          "tuning_steps": 5242880
+        },
+        "transitions": 5242880,
+        "episodes": 55239,
+        "first1000": {
+          "mean_return": 0.557,
+          "zero_fraction": 0.646
+        },
+        "last1000": {
+          "mean_return": 3.931,
+          "zero_fraction": 0.123
+        }
+      },
+      "lr001_gamma09_5m": {
+        "train_settings": {
+          "hidden_sizes": [
+            256,
+            256
+          ],
+          "learning_rate": 0.001,
+          "gamma": 0.9,
+          "gradient_clip": 1.0,
+          "unroll_length": 16,
+          "batch_unrolls": 16,
+          "num_envs": 16,
+          "block_steps": 499968,
+          "probe_steps": 524288,
+          "value_weight": 0.5,
+          "entropy_weight": 0.005,
+          "tuning_steps": 5242880
+        },
+        "transitions": 5242880,
+        "episodes": 62540,
+        "first1000": {
+          "mean_return": 0.513,
+          "zero_fraction": 0.645
+        },
+        "last1000": {
+          "mean_return": 3.071,
+          "zero_fraction": 0.171
+        }
+      },
+      "lr003_entropy01": {
+        "train_settings": {
+          "hidden_sizes": [
+            256,
+            256
+          ],
+          "learning_rate": 0.003,
+          "gamma": 0.99,
+          "gradient_clip": 1.0,
+          "unroll_length": 16,
+          "batch_unrolls": 16,
+          "num_envs": 16,
+          "block_steps": 499968,
+          "probe_steps": 524288,
+          "value_weight": 0.5,
+          "entropy_weight": 0.01
+        },
+        "transitions": 2097152,
+        "episodes": 26481,
+        "first1000": {
+          "mean_return": 0.509,
+          "zero_fraction": 0.667
+        },
+        "last1000": {
+          "mean_return": 1.414,
+          "zero_fraction": 0.381
+        }
+      },
+      "original_5m": {
+        "train_settings": {
+          "hidden_sizes": [
+            256,
+            256
+          ],
+          "learning_rate": 0.0003,
+          "gamma": 0.99,
+          "gradient_clip": 1.0,
+          "unroll_length": 16,
+          "batch_unrolls": 16,
+          "num_envs": 16,
+          "block_steps": 499968,
+          "probe_steps": 524288,
+          "value_weight": 0.5,
+          "entropy_weight": 0.005,
+          "tuning_steps": 5242880
+        },
+        "transitions": 5242880,
+        "episodes": 51965,
+        "first1000": {
+          "mean_return": 0.492,
+          "zero_fraction": 0.675
+        },
+        "last1000": {
+          "mean_return": 4.398,
+          "zero_fraction": 0.129
+        }
+      },
+      "original_long": {
+        "train_settings": {
+          "hidden_sizes": [
+            256,
+            256
+          ],
+          "learning_rate": 0.0003,
+          "gamma": 0.99,
+          "gradient_clip": 1.0,
+          "unroll_length": 16,
+          "batch_unrolls": 16,
+          "num_envs": 16,
+          "block_steps": 499968,
+          "probe_steps": 524288,
+          "value_weight": 0.5,
+          "entropy_weight": 0.005
+        },
+        "transitions": 2097152,
+        "episodes": 25885,
+        "first1000": {
+          "mean_return": 0.492,
+          "zero_fraction": 0.675
+        },
+        "last1000": {
+          "mean_return": 1.88,
+          "zero_fraction": 0.262
+        }
+      }
+    },
+    "source_checkpoints": {
+      "refresh_finetune_midpoint": {
+        "checkpoint": "tmp/stability-plasticity/checkpoints/finetune/block_0007.pt",
+        "sha256": "f3d609fd67434cdc02f3b47e9882ed8bad01359a05472de79e51b7c507ac5e60",
+        "block": 7
+      },
+      "refresh_finetune_final": {
+        "checkpoint": "tmp/stability-plasticity/checkpoints/finetune/block_0015.pt",
+        "sha256": "0e6e137742c063c1dbabc072faf8b11e991379c9d14974548e2af9d639e47f7c",
+        "block": 15
+      },
+      "refresh_cbp_midpoint": {
+        "checkpoint": "tmp/stability-plasticity/checkpoints/cbp/block_0007.pt",
+        "sha256": "42590af19692d462046d96e360168c6272be886a0a69fd92fd5d66bb30e9786e",
+        "block": 7
+      },
+      "refresh_cbp_final": {
+        "checkpoint": "tmp/stability-plasticity/checkpoints/cbp/block_0015.pt",
+        "sha256": "e8cc6d7a57cdf1b7b041105d187ff57563a55aefa007a4cac591ecbdb0afcefa",
+        "block": 15
+      },
+      "refresh_clear_midpoint": {
+        "checkpoint": "tmp/stability-plasticity/checkpoints/clear/block_0007.pt",
+        "sha256": "7766bc3ed4808cb871ef0c189c974ae52273d78379819ae0d09998f2351bb1c8",
+        "block": 7
+      },
+      "refresh_clear_final": {
+        "checkpoint": "tmp/stability-plasticity/checkpoints/clear/block_0015.pt",
+        "sha256": "50d2e1dd1cb92010dc456d6e07c857a4500648f40abca60a00251bac57e23688",
+        "block": 15
+      },
+      "refresh_clear_cbp_midpoint": {
+        "checkpoint": "tmp/stability-plasticity/checkpoints/clear_cbp/block_0007.pt",
+        "sha256": "885ca2b4a3906cbe8af27fc244f027a9ec4d404e189c05c8bab97663e63c9289",
+        "block": 7
+      },
+      "refresh_clear_cbp_final": {
+        "checkpoint": "tmp/stability-plasticity/checkpoints/clear_cbp/block_0015.pt",
+        "sha256": "e74fbc32fdfad65582a142b0b229f05ca9dd9e7e5dbd38524d5f840793071341",
+        "block": 15
+      }
+    },
+    "preserved_hashes": {
+      "results/config.yaml": "ed7b26e27c80b780d57a107dcc2ce326347e3c54d93df37a10f5d940a42c586d",
+      "results/baseline.png": "5732c64170c685f3b768965c482568686aed4a3215f39c97c7984e7805ef5830",
+      "results/performance.png": "2be5a840916c6b976367d21fc2e6128e6542a2fc3a22b739bd5b5e971666f763",
+      "results/audit.json": "cecd765777ecc2da5f302182f7412462f76c319c962bff008c52216c63dbe374",
+      "results/summary.csv": "67eee9fa60175b5182e21f5f1adf4d97c0f1c0f6916d245fc8a697397652512d",
+      "results/plasticity.png": "6686af223e4777918053fa17d4cc3ed853aa1d290e0249bcbb30b5d13c042324",
+      "results/retention.csv": "79ee5ef4825ced46506ad0a9bf03ddb5e5e17484c03a5f4513a3effa899b486b",
+      "results/clear/diagnostics.csv": "95e5d29688f7756d3da9e1d04b3e28ad108e88b8af32ef5b97a8df3c8c0364ab",
+      "results/clear/evaluations.csv": "f54391ade190d03804a97dfe85176a49a6272ae2eed7c6b4562a7bca710fbe36",
+      "results/clear/plasticity.csv": "a3a5b31e15f1cc289c0860f629be6297f3b70bd1fb0be7fcfd20e5575fb16f01",
+      "results/clear/config.yaml": "ed7b26e27c80b780d57a107dcc2ce326347e3c54d93df37a10f5d940a42c586d",
+      "results/clear/run.json": "90f904050429366659e0c82d19998d1576b3446a3309ee7acaee00328e1e1e77",
+      "results/clear/episodes.csv": "70a3e2a1f4e104c9dad876ccd654f9e6e5a2a0094032896e07dd664d2dc1c949",
+      "results/clear/blocks.csv": "1e642b4b0367735e9e58e280310d6de322d4914349f4d86fd170ccaa52f16ede",
+      "results/clear/model.pt": "6bf15c3096870d72afc125c55b767ba67cb95c27e22c14b40e553d65a8eeea2e",
+      "results/clear/videos/freeway.gif": "f1581cf61e5d46e011237fbac9e4450a6ccc5b9bbad46e61c9a11feb4f3b1110",
+      "results/clear/videos/space_invaders.gif": "1ac659ba239847b68b3e9eedf78316b52268c32fb1ee06adc0c491350f4b3abb",
+      "results/clear/videos/breakout.gif": "aff3331497cbcb9c6535861a27c7457661e4ceecd4f41ece648eebdcd995df3f",
+      "results/multitask/diagnostics.csv": "fa6e0d4410249530004928bdb8a704c858fde3869019e2f9ccfb35585ce040dd",
+      "results/multitask/evaluations.csv": "565751bf22ce290f937631f5e35a45e8f046c996762526af8790951efb4b9e27",
+      "results/multitask/plasticity.csv": "431808bdae5d715976eeb66155878ce0bee92b9e4a5ad0d0485dc502b22bedbf",
+      "results/multitask/config.yaml": "ed7b26e27c80b780d57a107dcc2ce326347e3c54d93df37a10f5d940a42c586d",
+      "results/multitask/run.json": "fdf102e692c8b86abd0f126874dca6ce06b9331946ec89cf76442459d0f1874e",
+      "results/multitask/episodes.csv": "7bc12352f0ddf587542ae1d431c99d785819cd34b40dc9ba3054328f55005980",
+      "results/multitask/blocks.csv": "e48e60fc393bd770df5789c729cbebceffc213303db215c09e06ec7982dcb214",
+      "results/multitask/model.pt": "f999cff65ebfd148c7c8bc38c4a563af847bdc18f538a11ebddcb94e893ef8d3",
+      "results/multitask/videos/freeway.gif": "68f4c2d4296ea993c30dda8a80e9b1f5f1bb321d2762684d66595e240509ab29",
+      "results/multitask/videos/space_invaders.gif": "e5caed162f1408636ce912131fa52feba82908f1d0f0fe2d02f1d5efb33848b6",
+      "results/multitask/videos/breakout.gif": "8e0694821ba60fd0cb32b33ad9f71580c6f707a50acd2683652f7d5b5e5181c7",
+      "results/replay/diagnostics.csv": "86584a5c116071408901fa4e98af420805a8c0aeaf945fe83793cc14ca611e1f",
+      "results/replay/evaluations.csv": "61e5eb0a85b32ec3ad10ae937817fb7578128b374adb2404e39d430eb7bf0d7a",
+      "results/replay/plasticity.csv": "e06d8667b8ec7280c771413ae4fb44eaf49a1512ddf41470f3bcc93e900befc1",
+      "results/replay/config.yaml": "ed7b26e27c80b780d57a107dcc2ce326347e3c54d93df37a10f5d940a42c586d",
+      "results/replay/run.json": "b99a2b25fea76862327aae85c6d1774be9031186c44beda3e97158aaeb6d2cff",
+      "results/replay/episodes.csv": "fffa39c8ddbad03df9155e766c8063534b7e03e3e5122dab5999edeeec99685b",
+      "results/replay/blocks.csv": "9b7bd5f910d1ccb90997daeee580f40b67cab5af6e17e9e8f1decc42353fe0af",
+      "results/replay/model.pt": "a3c9d9c4696084b97f2ef5d9e6d4b78fb12346d79317d9b5419e8e4bc72ca5d7",
+      "results/replay/videos/freeway.gif": "14b20f80cf2304c0c3b83d93f97ba316ba0df2d86594215f47ccdd50b886fcc2",
+      "results/replay/videos/space_invaders.gif": "01ae60929c029cebfd103c59e2c4cdde2d5278653b768ee0ed537cfb6582859f",
+      "results/replay/videos/breakout.gif": "d4c48a1d880a52c9236706afee9e2a4c86d8602924dc8fef23d409d63cad23df",
+      "results/finetune/diagnostics.csv": "90d1929cde01d827f337ce4cfbb9135da0796eb868c239b35dfe112e916af892",
+      "results/finetune/evaluations.csv": "4541b8cdaf51c770ed6eded5faaacabf9978e3b86e4f5079874782bdaceb7e30",
+      "results/finetune/plasticity.csv": "5ca04bafeb089246c252d76c4431ec427a2cf3f4e529ca60f88d0954e5a25adb",
+      "results/finetune/config.yaml": "ed7b26e27c80b780d57a107dcc2ce326347e3c54d93df37a10f5d940a42c586d",
+      "results/finetune/run.json": "21bcf23a04993e70a303d80cba42e482e3ba21a4df9d4c607603f6cc6cc90a3d",
+      "results/finetune/episodes.csv": "5b89734724a5b0854c10216c5f7d972411f9b8aa56568e56d1ba23a789e5e4cd",
+      "results/finetune/blocks.csv": "2d4121c3897281dfe17e309f59ee8cd0da22064574b13d21fd06b06909f2fab7",
+      "results/finetune/model.pt": "84f827f5bfd6655c69341e8c8a95fb42a5a614da84e748129d78791da6e5b55b",
+      "results/finetune/videos/freeway.gif": "79c34aa8248d5834dc6067a1d1e3a51c2a2cc18a4e6e22db32154bda8663c6f0",
+      "results/finetune/videos/space_invaders.gif": "3bed74c7c9a44c38a39261f145d2dc88e7a1d39acba3f87f86ab6b6db8e5e3d3",
+      "results/finetune/videos/breakout.gif": "f62870d97592c82bf0bfa0dd4990e70c613162e95f670e72b542812cc9a7277b",
+      "results/cbp/diagnostics.csv": "e16410478242d7fe8868d3581a124cc2adc95037af3d10ea6d42e03e5c998149",
+      "results/cbp/evaluations.csv": "d421b80681a6c6590deb57c63d468f344ed0af9b4f3ea0e4857aa5e2392ad95a",
+      "results/cbp/plasticity.csv": "8a02dd1248199ccf0840787253abfa4d07e3f3d83e7b32db65853ebf0c60b1b7",
+      "results/cbp/config.yaml": "ed7b26e27c80b780d57a107dcc2ce326347e3c54d93df37a10f5d940a42c586d",
+      "results/cbp/run.json": "73484076c9a6f4502358c312c2f3263de88b1fb4918fde5d66d5c148d6b100c9",
+      "results/cbp/episodes.csv": "f3de20664ed3fd6136d29f1c1b20aa7d043da57bb237dfb54296bc9610935db0",
+      "results/cbp/blocks.csv": "4510c67b06da9d4c08caf3305105ff38446e5342601a9029d98eed7086aa6d3f",
+      "results/cbp/model.pt": "ef33579c2d845a2d806c2d33bdcb5059d5edadf201dcceda4f9ce4d5b983f16c",
+      "results/cbp/videos/freeway.gif": "8400c47c2fb5f4e5acfe8036d7465a531bbcbc2ee737f8b22ce6dafdd4ed75c9",
+      "results/cbp/videos/space_invaders.gif": "25276e18fc8942a70d434da2d5b275bca6c2c7e7cc28addcb5eaf57407be2271",
+      "results/cbp/videos/breakout.gif": "b4e790fa6bede77555baa1f9711743ecee93cc6695b63220a325b5b74dabc4f3",
+      "results/scratch/space_invaders/diagnostics.csv": "d33bce3bfd6f386960392ff02104d502d6d5a32e2cc50b7cfb92d63496796580",
+      "results/scratch/space_invaders/evaluations.csv": "a2f02998db8e2233ad39074f968ac46d8bdb4347132c5738262f1a6fe46437b3",
+      "results/scratch/space_invaders/plasticity.csv": "90979ead5279061694437372d86ced223fa83c13e381049bddcbf0bd7f3d2d43",
+      "results/scratch/space_invaders/config.yaml": "ed7b26e27c80b780d57a107dcc2ce326347e3c54d93df37a10f5d940a42c586d",
+      "results/scratch/space_invaders/run.json": "ba9cb96c889da8c62a34a254411616610cb5706a1aeaf20700e2bf653a79991b",
+      "results/scratch/space_invaders/episodes.csv": "fe68a0e7aed7051ae0f931b160d1f0390d50066a6b81d7578c14266bf94c610d",
+      "results/scratch/space_invaders/blocks.csv": "c5b21e4def4afdefa26332222ad8f1938159be0a80c9bc62bdc2047e22a4e02c",
+      "results/scratch/space_invaders/model.pt": "e2bc381621442680001521ba9a9bd3506d899c9b39db8acc83676bcebbaaeae8",
+      "results/scratch/space_invaders/videos/space_invaders.gif": "e7f5f614bb1dbe9227840f23097010656ab965aae0dcdc40c53c9707872eb6e4",
+      "results/scratch/breakout/diagnostics.csv": "58899e7a0096b6b3914dfc9a6f3eefdbf9270f7f2725e955b1163e48eee23a73",
+      "results/scratch/breakout/evaluations.csv": "388c5ec3a418480193db62ea16e7ad6c7923e31e808721951801b485a77dba55",
+      "results/scratch/breakout/plasticity.csv": "a7ac3e10746d4a481a7f1c837068ce4ff2113972d61fb78878d3f10f206482ac",
+      "results/scratch/breakout/config.yaml": "ed7b26e27c80b780d57a107dcc2ce326347e3c54d93df37a10f5d940a42c586d",
+      "results/scratch/breakout/run.json": "ade9f3cdd83389a7c69522dc7b5a5da462fe1aac09d6fd9b183c293d885c87ca",
+      "results/scratch/breakout/episodes.csv": "792735df85b70ffd00965bdf79384943bb173218405e7d327688df7254360e33",
+      "results/scratch/breakout/blocks.csv": "9c976ab6bb1c29d330537fb0774873fd4004b5a17f1ad9d4e4af51b6bb0259fb",
+      "results/scratch/breakout/model.pt": "906d4c2b586bc3481fe5c1449452d1f9d271bca1777048c8fd5648fa43ec6321",
+      "results/scratch/breakout/videos/breakout.gif": "25fc515132eb7a2d402bfd4e332705a82c5ab6fab4c96aac5fa7c03c815b223c",
+      "results/scratch/freeway/diagnostics.csv": "510a78717a822a0576dbb38ebc303d415e01d284b732fb3e4cd396c565dd96de",
+      "results/scratch/freeway/evaluations.csv": "2bc66822026406430d8b16f23a7bc1a931ca6d90f8a97d4ce255f112f5db9438",
+      "results/scratch/freeway/plasticity.csv": "64993fc39619ca3e170445aace0c8a3e664a67ad2734ff9d4d093b2f58284c9e",
+      "results/scratch/freeway/config.yaml": "ed7b26e27c80b780d57a107dcc2ce326347e3c54d93df37a10f5d940a42c586d",
+      "results/scratch/freeway/run.json": "9e980990cf52d2d083c3f52b0e810c96776b9cb36a384ec9e8e5b7fb20124844",
+      "results/scratch/freeway/episodes.csv": "56f1849be2fab59b107b8175147b4338335b9d250e9b39110919b27680188ebd",
+      "results/scratch/freeway/blocks.csv": "9e4c2b097d19b24cd7ebe4624725fb68b2f27d6ddbb5e8a48661f7e1dc04b524",
+      "results/scratch/freeway/model.pt": "b1ba71f5b5a9d8576375d5dfe121d73f8382982258075217459269372051d366",
+      "results/scratch/freeway/videos/freeway.gif": "0dcc32fd5c71921361e8e4e9b251f07e589aad08cc864607b5aa2280b1e16905",
+      "results/clear_cbp/diagnostics.csv": "33ed3e83b10fea99910f410564779cef51b80d1a45eed7feb1b66324ba0aa143",
+      "results/clear_cbp/evaluations.csv": "868e3335f7865b4881f451ba0e2cb28f761596a65e2f26dd1a4ec6ea9ce19fd4",
+      "results/clear_cbp/plasticity.csv": "e5351b583663ae0e03c6c30eb19a6217c07d951f9e2a51b856786d18f83b777c",
+      "results/clear_cbp/config.yaml": "ed7b26e27c80b780d57a107dcc2ce326347e3c54d93df37a10f5d940a42c586d",
+      "results/clear_cbp/run.json": "75fc97193ff424e311e1dd08ce0902372b840692d123c4c9c7c646f3a82a53e7",
+      "results/clear_cbp/episodes.csv": "dd1a7b71d9421dcb37c0cd6e6e91fd896b936ba6d770aa7f8455fc5cdd4c4b2e",
+      "results/clear_cbp/blocks.csv": "7dcdec7e385a3563a282f6611b11716b07d5ea7312604dcb03a59ddfdfe804a2",
+      "results/clear_cbp/model.pt": "98b37c0d739cd0bea533394ecee622596403643cb7471a6a9d432e6f4f30860f",
+      "results/clear_cbp/videos/freeway.gif": "768d1922ff0362dc8e8f43bfb3e1b930bf9cc7d2d8a017f6ae1273ccf256369e",
+      "results/clear_cbp/videos/space_invaders.gif": "0ad2c47c01305ef1b0ac5120081531fdf7b87fed5ce839b47d02c64f29f188bc",
+      "results/clear_cbp/videos/breakout.gif": "ca7ff92d3b39b629a4a8194dd9e1cf1aa7fd153451086e5c153e69e5d0aa6d31"
+    },
+    "source_hashes": {
+      "src/compare.py": "061d539d58b40efbe71d1169eaf03353cd77ca1ed3ada1a89cf07e7a7b7f3276",
+      "src/study.py": "cdb27cc1680394eef322779b78ff8c018d7e90796cfa11d12bb521b4995f6442",
+      "src/__init__.py": "1981ade054b62c3e13f591ee6fbe36bf8fa9411e5f092a5aafe47385631252c6",
+      "src/clear/__init__.py": "2d874ffcc7cd4d46fbef993b70ba527577b6b9383515c181e7ece8982cc4f2fc",
+      "src/clear/replay.py": "22ef310862a6e97da0d5c7f70d1b90b8099a5d34ae7951e6f6430b3886d13935",
+      "src/clear/learner.py": "12cede1fe52bf0e78bd6ebcfb15945fa6717f16660a2addfaf892194b5cc5f52",
+      "src/cbp/optimizer.py": "aadc885bfaf1fe5098dd63ba2026c63647d84a0d7c7a548bb5b6127b20fe23ee",
+      "src/cbp/__init__.py": "e35bb769509d59a13e94f3749b0eaec9ae0d11bf69dcbc23879abba964b15635",
+      "src/cbp/diagnostics.py": "9b320bb2bc3c41a6f032147ce110c9e99a9802167a22d369d22b4c8cc89e5e95",
+      "src/cbp/algorithm.py": "50014ea7781a4956b157e8b2a47492bf0d0ed37a5a1600c13e47956f864aebe2",
+      "src/utils/compare.py": "5b47b6bd240923f9af05846eb8bee108982e2c4e46aeffbcb6fb5147fc2960b8",
+      "src/utils/config.py": "e55b57897e44066b9d77193f98c6ccd91817529563b9d2430678c9c34befeb2e",
+      "src/utils/io.py": "bc853813c9863f6add364e61248b1c23513fd2f60c51b946eff0c6d635eb4415",
+      "src/utils/study.py": "3b1f801353f71cf9cffc6fae03154f4b6f1830ee2f7fae96a9307634b2a454ae",
+      "src/utils/runtime.py": "4e6a4e63d25c62f3887aa8a6e0f3e6437f24b8d149a9dec12c3c85debe6e7723",
+      "src/utils/envs.py": "fe166a786fc12ca6042ef9afdf1f8d30ae6c958c23ec960574f431488868a57b",
+      "src/utils/__init__.py": "91f8d7cf1d57e2f0d38e6d1fbbbbef7d06e27f1aefb42406d7ee2a568069121e",
+      "src/utils/report.py": "3ea23d4c77fd24c4e78b0f36a77b5260b3125bdca494490d2172602b1e4dd5b5",
+      "tmp/tune_asterix.py": "e86c935bee676c8de83480003937fc0263ab5d62eb5a44fc311876a1ae95e85b",
+      "tmp/refresh_asterix.py": "f8dc76125d2d8f32e693aa369b843edcbc693cdd127312246dbe9b304550c46c"
+    },
+    "status": "complete",
+    "archive": "tmp/asterix_probes_previous_1789353817372612942",
+    "completed_at": 1789353817.3868442,
+    "additional_probe_transitions": 41943040,
+    "reused_reference_transitions": 5242880,
+    "main_training_transitions": 0
+  },
   "profile": {
     "selected_workers": 4,
     "measurements": [
       {
         "workers": 1,
-        "seconds": 40.61797094345093,
-        "transitions_per_second": 4235.366661705137,
-        "allocated_gpu_peak_bytes": 22831616
+        "seconds": 40.585007667541504,
+        "transitions_per_second": 1110.1636439022836,
+        "allocated_gpu_peak_bytes": 35667456
       },
       {
         "workers": 2,
-        "seconds": 40.42122197151184,
-        "transitions_per_second": 6510.639390998029,
-        "allocated_gpu_peak_bytes": 45675520
+        "seconds": 40.39691376686096,
+        "transitions_per_second": 1875.786859296211,
+        "allocated_gpu_peak_bytes": 71347200
       },
       {
         "workers": 4,
-        "seconds": 40.234906911849976,
-        "transitions_per_second": 8621.369517766598,
-        "allocated_gpu_peak_bytes": 90958848
+        "seconds": 39.90733504295349,
+        "transitions_per_second": 2565.944328023501,
+        "allocated_gpu_peak_bytes": 142666752
       }
     ],
     "memory_headroom_fraction": 0.2

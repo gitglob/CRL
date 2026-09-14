@@ -1,0 +1,23 @@
+{
+  "initial": {
+    "file": "initial.pt",
+    "completed_blocks": 0,
+    "env_steps": 0,
+    "source": "tmp/stability-plasticity/checkpoints/scratch/space_invaders/block_0000.pt",
+    "source_sha256": "cec004a6c1de3ca0bacf4e31a3cea6aabda9d7d9d8f9c1ea8dbc4d0c380cd19e"
+  },
+  "midpoint": {
+    "file": "midpoint.pt",
+    "completed_blocks": 2,
+    "env_steps": 999936,
+    "source": "tmp/stability-plasticity/checkpoints/scratch/space_invaders/block_0002.pt",
+    "source_sha256": "e4da158c0e753757f37ea9107ecc287033c77fb95db1f7413b8dd3e46278caa9"
+  },
+  "final": {
+    "file": "final.pt",
+    "completed_blocks": 5,
+    "env_steps": 2499840,
+    "source": "tmp/stability-plasticity/checkpoints/scratch/space_invaders/block_0005.pt",
+    "source_sha256": "2f705eb44325643dcd77a9c83db803e22a06deceeadaea2f03edbce66fd1e6f6"
+  }
+}

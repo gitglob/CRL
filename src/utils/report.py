@@ -9,6 +9,7 @@ os.environ.setdefault("SDL_VIDEODRIVER", "dummy")
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
+plt.rcParams["path.simplify"] = False
 from matplotlib.lines import Line2D
 import numpy as np
 import torch
@@ -18,9 +19,11 @@ from .io import read_run, save_csv, save_json
 from .envs import make_env, seed_for, task_names
 from ..clear.learner import ActorCritic
 from .runtime import BudgetExpired, check_time, evaluate
+from .report_details import diagnostic_notes, findings_notes, probe_result_notes, protocol_notes, tuning_notes
 
 LABELS = {"finetune": "Fine-tuning", "cbp": "CBP", "replay": "Replay without cloning", "clear": "CLEAR", "clear_cbp": "CLEAR + CBP", "scratch": "Scratch", "multitask": "Joint training"}
 COLORS = {"finetune": "tab:gray", "cbp": "tab:orange", "replay": "tab:purple", "clear": "tab:blue", "clear_cbp": "tab:green"}
+PROBE_SMOOTHING_SIGMA = 200
 
 
 def experiment_notes(root, runs, summary, qualification, manifest, common):
@@ -28,8 +31,6 @@ def experiment_notes(root, runs, summary, qualification, manifest, common):
     steps = [data["compared_env_steps"] for data in summary.values()]
     exposure = f"{steps[0]:,}" if steps and len(set(steps)) == 1 else "See the individual run files for"
     lines = ["", f"The pipeline took **{elapsed / 60:.1f} minutes** on {manifest['gpu']}, with {manifest['workers']} concurrent runs selected by profiling. Each compared arm received {exposure} main-training transitions."]
-    if qualification.get("probe_auc_threshold_met") and not qualification["plasticity_loss_demonstrated"]:
-        lines.extend(["", "The raw probe-AUC threshold was crossed, but the fresh reference did not learn enough above random. That threshold alone is not evidence of plasticity loss."])
     return lines
 
 
@@ -37,12 +38,7 @@ def measurement_notes(runs, summary, tasks, common):
     lines = ["", "Loss since each task's preceding learning block (positive means forgetting; the last trained task necessarily has zero loss at this checkpoint):", "", "| Arm | " + " | ".join(tasks) + " |", "|---|" + "---:|" * len(tasks)]
     for arm, data in summary.items():
         lines.append("| " + LABELS[arm] + " | " + " | ".join(f"{data['forgetting_since_last_learning'].get(task, 0):.1f}" for task in tasks) + " |")
-    lines.extend(["", "Isolated held-out learning AUC (time-averaged raw return over the same probe budget):", "", "| Arm / task | Initial = scratch | Midpoint | Final |", "|---|---:|---:|---:|"])
-    for arm, data in summary.items():
-        for task in data["probe_auc"].get("initial", {}):
-            values = [data["probe_auc"].get(phase, {}).get(task) for phase in ("initial", "midpoint", "final")]
-            lines.append("| " + LABELS[arm] + " / " + task + " | " + " | ".join("incomplete" if value is None else f"{value:.3f}" for value in values) + " |")
-    lines.extend(["", "Low probe returns and rank changes do not independently establish loss of plasticity. A fresh learner must learn the probe within the allotted budget for an AUC deficit to be persuasive."])
+    lines.extend(["", "Held-out Asterix probes plot every completed training episode against probe environment steps. Plasticity is assessed descriptively, without an AUC score or an automatic pass/fail threshold."])
     for arm in ("cbp", "clear_cbp"):
         if arm in runs and common:
             row = runs[arm]["diagnostics"][common - 1]
@@ -50,30 +46,51 @@ def measurement_notes(runs, summary, tasks, common):
     return lines
 
 
-def normalize(value, task, suite, qualification):
-    random = qualification.get("random_scores", {}).get(task, {}).get("return")
-    reference = qualification.get("scratch_returns", {}).get(task)
-    if random is None or reference is None or reference <= random:
+def probe_notes(runs):
+    lines = ["", "Recorded Asterix training settings, per arm and phase:", "",
+             "| Arm | Phase | Steps | Updates | Learning rate | Discount | Entropy weight |",
+             "|---|---|---:|---:|---:|---:|---:|"]
+    for arm, run in runs.items():
+        for phase, tasks in run.get("probes", {}).items():
+            for payload in tasks.values():
+                settings = payload.get("train_settings", {})
+                values = [payload.get("train_env_steps"), payload.get("updates"),
+                          settings.get("learning_rate"), settings.get("gamma"), settings.get("entropy_weight")]
+                lines.append(f"| {LABELS[arm]} | {phase} | " + " | ".join("unrecorded" if value is None else str(value) for value in values) + " |")
+    return lines if len(lines) > 5 else []
+
+
+def matched_references(root, run, common, tasks, random_scores):
+    exposure = dict.fromkeys(tasks, 0)
+    previous = 0
+    for row in run["matrix"][1:common + 1]:
+        trained = tasks if row["task"] == "multitask" else [row["task"]]
+        for task in trained:
+            exposure[task] += (row["steps"] - previous) // len(trained)
+        previous = row["steps"]
+    references = {}
+    for task, steps in exposure.items():
+        directory = root / "scratch" / task
+        scratch = read_run(directory)
+        matched = next((row for row in scratch.get("matrix", [])[1:] if row["steps"] == steps), None)
+        references[task] = {"path": str(directory), "training_env_steps": steps,
+                            "scratch_env_steps": matched["steps"] if matched else None,
+                            "scratch_return": matched["scores"][task]["return"] if matched else None,
+                            "random_return": random_scores.get(task, {}).get("return")}
+    return references
+
+
+def normalize(value, reference):
+    random, scratch = reference["random_return"], reference["scratch_return"]
+    if random is None or scratch is None or scratch <= random:
         return None
-    return (value - random) / (reference - random)
+    return (value - random) / (scratch - random)
 
 
 def figure_save(fig, root, name):
     fig.tight_layout()
     fig.savefig(root / name, dpi=140)
     plt.close(fig)
-
-
-def smooth_series(xs, ys, bins=24):
-    """Average into equal-width x bins: raw per-episode return is far too noisy to read."""
-    if len(xs) <= bins:
-        return list(xs), list(ys)
-    xs, ys = np.asarray(xs, dtype=float), np.asarray(ys, dtype=float)
-    edges = np.linspace(xs[0], xs[-1], bins + 1)
-    index = np.clip(np.digitize(xs, edges[1:-1]), 0, bins - 1)
-    counts = np.bincount(index, minlength=bins)
-    filled = counts > 0
-    return (np.bincount(index, weights=xs, minlength=bins)[filled] / counts[filled]).tolist(), (np.bincount(index, weights=ys, minlength=bins)[filled] / counts[filled]).tolist()
 
 
 def task_segments(run, task, blocks=None):
@@ -104,7 +121,9 @@ def task_segments(run, task, blocks=None):
         style = mark
     if len(current) > 1:
         segments.append((current, style))
-    return [(*smooth_series([x for x, _, _ in points], [y for _, y, _ in points]), "-" if mark else "--") for points, mark in segments]
+    elif current:
+        segments.append((current, current[0][2] in trained))
+    return [([x for x, _, _ in points], [y for _, y, _ in points], "-" if mark else "--") for points, mark in segments]
 
 
 def figures(root, runs, suite, common):
@@ -123,18 +142,23 @@ def figures(root, runs, suite, common):
     handles = [Line2D([0], [0], color=resolved_colors[arm], label=LABELS[arm]) for arm in runs]
     axes[-1, 0].legend(handles=handles, fontsize=7)
     figure_save(fig, root, "performance.png")
-    keys = (("actor_stable_rank_1", "Actor stable rank"), ("critic_stable_rank_1", "Critic stable rank"), ("actor_dead_fraction_1", "Actor low-activity fraction"), ("critic_max_abs_value", "Value magnitude"))
-    fig, axes = plt.subplots(4, 1, figsize=(10, 3.2 * 4))
-    for (key, title), ax in zip(keys, axes):
-        if key == "critic_max_abs_value":
-            key = "max_abs_value"
-        for arm, run in runs.items():
-            rows = [r for r in run["diagnostics"][:common] if key in r]
-            ax.plot([r["steps"] for r in rows], [r[key] for r in rows], label=LABELS[arm], color=COLORS.get(arm))
-        ax.set(title=title, xlabel="Training transitions")
-        ax.grid(alpha=0.2)
-    axes[-1].legend(fontsize=7)
-    figure_save(fig, root, "plasticity.png")
+    plasticity_figure(root, runs, common)
+    probe_figure(root, runs, suite)
+
+
+def gaussian_probe_returns(values, sigma=PROBE_SMOOTHING_SIGMA):
+    """Smooth episode returns with a normalized Gaussian and reflected boundaries."""
+    values = np.asarray(values, dtype=float)
+    if len(values) < 2:
+        return values.copy()
+    radius = int(np.ceil(4 * sigma))
+    offsets = np.arange(-radius, radius + 1)
+    kernel = np.exp(-0.5 * (offsets / sigma) ** 2)
+    kernel /= kernel.sum()
+    return np.convolve(np.pad(values, radius, mode="reflect"), kernel, mode="valid")
+
+
+def probe_figure(root, runs, suite):
     probe_names = task_names(suite, probes=True)
     selected = [(arm, run) for arm, run in runs.items() if run.get("probes")]
     if selected:
@@ -144,14 +168,41 @@ def figures(root, runs, suite, common):
                 ax = axes[row, column]
                 for phase, style in (("initial", "--"), ("midpoint", ":"), ("final", "-")):
                     probe = run.get("probes", {}).get(phase, {}).get(task, {})
-                    points = probe.get("episode_log") or probe.get("curve", [])
-                    xs, ys = smooth_series([point["env_steps"] for point in points], [point["return"] for point in points])
-                    ax.plot(xs, ys, style, label=phase)
-                ax.set(title=f"{LABELS[arm]} / {task}", xlabel="Isolated probe env steps", ylabel="Episodic return")
+                    points = probe.get("episode_log", [])
+                    ax.plot([point["env_steps"] for point in points], gaussian_probe_returns([point["return"] for point in points]), style, label=phase, linewidth=1.2)
+                if not any(line.get_xdata().size for line in ax.lines):
+                    ax.text(0.5, 0.5, "No completed probe episodes recorded", transform=ax.transAxes, ha="center")
+                ax.set(title=f"{LABELS[arm]} / {task} (Gaussian σ={PROBE_SMOOTHING_SIGMA} episodes)", xlabel="Isolated probe env steps", ylabel="Smoothed episodic return")
                 ax.grid(alpha=0.2)
                 if column == 0:
                     ax.legend(fontsize=7)
         figure_save(fig, root, "probe_curves.png")
+
+
+def plasticity_figure(root, runs, common):
+    keys = (("stable_rank_percent", "Stable rank", "% of final hidden width"),
+            ("dormant_percent", "Dormant units", "% of hidden units"),
+            ("weight_magnitude_1", "Average weight magnitude", "Mean |weight|, hidden layer 2"))
+    fig, axes = plt.subplots(2, 3, figsize=(15, 7), squeeze=False)
+    for row, name in enumerate(("actor", "critic")):
+        for ax, (metric, title, ylabel) in zip(axes[row], keys):
+            for arm, run in runs.items():
+                cutoff = run["matrix"][common]["steps"]
+                key = f"{name}_{metric}"
+                points = [entry for entry in run.get("plasticity", []) if entry["env_steps"] <= cutoff and entry.get(key) is not None]
+                if points:
+                    ax.plot([entry["env_steps"] for entry in points], [entry[key] for entry in points], label=LABELS[arm], color=COLORS.get(arm), linewidth=0.8)
+            if not ax.lines:
+                ax.text(0.5, 0.5, "No interaction diagnostics recorded", transform=ax.transAxes, ha="center", fontsize=9)
+            ax.set(title=f"{name.capitalize()}: {title}", xlabel="Environment steps", ylabel=ylabel)
+            if metric.endswith("percent"):
+                ax.set_ylim(0, 100)
+            ax.grid(alpha=0.2)
+    for ax in axes.flat:
+        if ax.lines:
+            ax.legend(fontsize=7)
+            break
+    figure_save(fig, root, "plasticity.png")
 
 
 def baseline_figure(root, suite):
@@ -265,7 +316,7 @@ def finalize_scratch(root, config, qualification, manifest, deadline, saved_arti
             continue
         references[task] = {"status": run["status"], "completed_blocks": run["completed_blocks"], "env_steps": run["env_steps"], "scores": run["matrix"][-1]["scores"].get(task) if run["matrix"] else None}
         points = run.get("episode_log") or [point for curve in run["curves"] for point in curve["points"]]
-        xs, ys = smooth_series([point["env_steps"] for point in points], [point["return"] for point in points])
+        xs, ys = [point["env_steps"] for point in points], [point["return"] for point in points]
         ax.plot(xs, ys)
         ax.set(title=task, xlabel="Environment steps", ylabel="Episodic return")
         if saved_artifacts is not None or not run["matrix"]:
@@ -316,13 +367,14 @@ def finalize(root, config, qualification, manifest, deadline, saved_artifacts=No
     summary = {}
     for arm, run in runs.items():
         row = run["matrix"][common]
-        normalized = [normalize(row["scores"][task]["return"], task, suite, qualification) for task in tasks]
+        references_for_arm = matched_references(root, run, common, tasks, qualification.get("random_scores", {}))
+        normalized = [normalize(row["scores"][task]["return"], references_for_arm[task]) for task in tasks]
         drops = retention_drops(run["matrix"][:common + 1])
         last_learning = {}
         for entry in run["matrix"][1:common + 1]:
             last_learning[entry["task"]] = entry["scores"].get(entry["task"], {}).get("return")
         final_forgetting = {task: last_learning[task] - row["scores"][task]["return"] for task in tasks if last_learning.get(task) is not None}
-        summary[arm] = {"status": run["status"], "completed_blocks": run["completed_blocks"], "compared_blocks": common, "compared_env_steps": row["steps"], "final_returns": {task: row["scores"][task]["return"] for task in tasks}, "average_normalized_performance": float(np.mean(normalized)) if all(value is not None for value in normalized) else None, "forgetting_since_last_learning": final_forgetting, "retention_drops": drops, "probe_auc": {phase: {task: payload.get("auc") for task, payload in entries.items()} for phase, entries in run.get("probes", {}).items()}, "probe_checkpoint_blocks": run.get("probe_checkpoint_blocks", {}), "updates": run["diagnostics"][common - 1]["updates"] if common else 0}
+        summary[arm] = {"status": run["status"], "completed_blocks": run["completed_blocks"], "compared_blocks": common, "compared_env_steps": row["steps"], "final_returns": {task: row["scores"][task]["return"] for task in tasks}, "average_normalized_performance": float(np.mean(normalized)) if all(value is not None for value in normalized) else None, "forgetting_since_last_learning": final_forgetting, "retention_drops": drops, "normalization_references": references_for_arm, "probes": {phase: {task: {key: payload.get(key) for key in ("status", "train_env_steps", "updates", "train_settings")} for task, payload in entries.items()} for phase, entries in run.get("probes", {}).items()}, "probe_checkpoint_blocks": run.get("probe_checkpoint_blocks", {}), "updates": run["diagnostics"][common - 1]["updates"] if common else 0}
         if run["completed_blocks"] != common:
             summary[arm]["probe_comparison_warning"] = "Probe ages differ from the common comparison checkpoint. Read as individual runs only."
         if saved_artifacts is not None:
@@ -349,33 +401,53 @@ def finalize(root, config, qualification, manifest, deadline, saved_artifacts=No
         figures(root, runs, suite, common)
     has_baseline = baseline_figure(root, suite)
     complete = set(runs) == set(config["arms"]) and all(run["status"] == "complete" for run in runs.values())
+    complete = complete and all(entry["run"]["status"] == "complete" for entry in references.values())
     verified = len(audit) == len(runs) + len(references) and bool(runs) and all(row.get("match") for row in audit)
-    outcome = "qualified demonstration" if qualification["qualified"] and complete and verified else "inconclusive demonstration"
+    outcome = "completed study" if complete and verified else "incomplete study"
     save_csv(root / "retention.csv", ("arm", "block", "task", "since_block", "drop", "return"),
              [{"arm": arm, **drop} for arm, data in summary.items() for drop in data["retention_drops"]] + [{"arm": "pilot_finetune", **drop} for drop in qualification.get("retention_drops", [])])
     # Tables belong in the CSVs; the JSON keeps the decision and provenance record.
     slim = {arm: {key: value for key, value in data.items() if key != "retention_drops"} for arm, data in summary.items()}
     report = {"schema": 1, "suite": suite, "seed": 0, "outcome": outcome, "qualified": qualification["qualified"], "common_completed_blocks": common, "all_runs_complete": complete, "all_checkpoints_verified": verified, "arms": slim, "qualification": {key: value for key, value in qualification.items() if key != "retention_drops"}, "provenance": manifest, "audit": audit, "clips": clips}
+    if (root / "probe_refresh.json").exists():
+        report["probe_refresh"] = json.loads((root / "probe_refresh.json").read_text())
     save_json(root / "summary.json", report)
     save_json(root / "audit.json", audit)
     save_csv(root / "summary.csv", ("arm", "task", "final_return", "forgetting_since_last_learning", "average_normalized_performance", "compared_blocks", "compared_env_steps", "updates", "status"),
              [{"arm": arm, "task": task, "final_return": data["final_returns"][task], "forgetting_since_last_learning": data["forgetting_since_last_learning"].get(task),
                "average_normalized_performance": data["average_normalized_performance"], "compared_blocks": data["compared_blocks"],
                "compared_env_steps": data["compared_env_steps"], "updates": data["updates"], "status": data["status"]} for arm, data in summary.items() for task in tasks])
-    lines = ["# CLEAR and continual backpropagation", "", f"**{outcome.capitalize()}.** Suite: **{suite}**. One seed (0), {common} matched completed blocks. No confidence intervals or statistical ranking."]
+    lines = ["# CLEAR and continual backpropagation", "", f"**{outcome.capitalize()}.** One seed (0), {common} matched completed blocks. Plasticity conclusions are descriptive."]
     lines.extend(experiment_notes(root, runs, summary, qualification, manifest, common))
-    lines.extend(["", "## Benchmark qualification", "", f"- All pilots completed: **{qualification['all_pilots_complete']}**.", f"- Scratch and joint learnability gate: **{qualification['learnable']}**.", f"- Forgetting gate: **{qualification['forgetting_demonstrated']}**.", f"- Fresh-task plasticity-loss gate: **{qualification['plasticity_loss_demonstrated']}**.", "", "MinAtar requires scratch minus random to exceed max(1, 0.2 × random), and joint return to retain at least 80% of that improvement on every recurring game. Forgetting must reach 20% of the scratch improvement on two games. The Asterix probe must show a 10% normalized AUC deficit, with a scratch probe that passes the same above-random learning check. These are operational demonstration thresholds, not significance tests.", "", "| Pilot task | Random | Scratch | Joint |", "|---|---:|---:|---:|"])
-    for task in tasks:
-        scores = [qualification.get("random_scores", {}).get(task, {}).get("return"), qualification.get("scratch_returns", {}).get(task), qualification.get("joint_returns", {}).get(task)]
-        lines.append("| " + task + " | " + " | ".join("unavailable" if value is None else f"{value:.1f}" for value in scores) + " |")
+    lines.extend(findings_notes(runs, summary, common, LABELS))
+    lines.extend(protocol_notes(config, runs, common))
+    lines.extend(["", "## Pilot checks", "", f"All pilots completed: **{qualification['all_pilots_complete']}**. Scratch/joint learnability: **{qualification['learnable']}**. Forgetting demonstrated: **{qualification['forgetting_demonstrated']}**.", "", "These checks describe the short pilots; they do not determine study completion or provide the final normalization references. Plasticity has no automatic qualification threshold."])
     lines.extend(["", "## Matched final returns", "", "| Arm | " + " | ".join(tasks) + " | Normalized AP |", "|---|" + "---:|" * (len(tasks) + 1)])
     for arm, data in summary.items():
         ap = data["average_normalized_performance"]
         lines.append("| " + LABELS[arm] + " | " + " | ".join(f"{data['final_returns'][task]:.1f}" for task in tasks) + " | " + (f"{ap:.3f}" if ap is not None else "unavailable") + " |")
+    lines.extend(["", "Normalization is (return − random) / (scratch − random), without clipping. Scratch checkpoints come from this output root and match each task's training exposure. Missing matches or nonpositive denominators give unavailable scores; pilot scratch scores are never substituted.", "", "| Arm | Task | Matched scratch steps | Scratch return | Random return |", "|---|---|---:|---:|---:|"])
+    for arm, data in summary.items():
+        for task, reference in data["normalization_references"].items():
+            values = [reference[key] for key in ("scratch_env_steps", "scratch_return", "random_return")]
+            lines.append(f"| {LABELS[arm]} | {task} | " + " | ".join("unavailable" if value is None else str(value) for value in values) + " |")
     if has_baseline:
-        lines.extend(["", "![Baseline performance](baseline.png)", "", "One panel per baseline arm (scratch, joint training, fine-tuning; whichever have completed under this root), one line per task."])
+        lines.extend(["", "![Baseline performance](baseline.png)"])
     lines.extend(measurement_notes(runs, summary, tasks, common))
-    lines.extend(["", "MinAtar normalization is (return - random) / (scratch - random), without clipping; it is unavailable when scratch does not outperform random. Raw game returns remain the primary comparison.", "", "## Retention and fresh-task learning", "", "![Performance](performance.png)", "", "One panel per task, plotted against cumulative environment steps. Every task is evaluated on the same fixed step grid (`eval.period`) plus each block boundary, so all tasks and arms share one clock: episode length differs by task, which would otherwise give each task a different axis. Each point is the mean return over `eval.episodes` episodes sampled from the policy, with environment seeds derived from the evaluation point so successive measurements are independent yet reproducible. Solid stretches mark the blocks where that panel's task was being trained and dashed stretches the blocks where others were, but both are measured, not interpolated. A task's line begins at its first training block. A rise during a task's own block is acquisition; the drop across the following dashed span is what the intervening tasks cost it.", "", "The initial probe is the paired scratch reference because every arm starts with the same seeded weights. Midpoint and final probes copy weights into new, isolated learners with fresh optimizers, fresh-only updates, and no replay or CBP. Their scores test the adaptability of the learned parameters; they do not alter the main run or test the accumulated optimizer state.", "", "![Probe curves](probe_curves.png)", "", "![Plasticity diagnostics](plasticity.png)", "", "## Implementation and interpretation", "", "All arms use separate two-layer ReLU actor and critic MLPs, identical initialization, AdamCBP, V-trace targets, and equal learner batch and environment budgets. CLEAR mixes fresh and reservoir unrolls and adds KL(behavior || current) policy cloning and historical-value cloning only on replay. The replay arm disables those cloning losses. CBP resets low-contribution mature units in both networks, including optimizer moments and elementwise counters.", "", "The algorithms can be combined, but a CLEAR+CBP advantage must be observed rather than assumed. Read its retention and probe curves against both single-intervention arms. Results here describe one trajectory; the experiment does not establish a general ranking.", "", "CLEAR loss weights follow the [paper](https://arxiv.org/pdf/1811.11682). CBP uses contribution utility from the [authors' RL implementation](https://github.com/shibhansh/loss-of-plasticity), with miniature-study maturity 1,000 updates, replacement rate 0.0001, decay 0.99, and no weight decay in any arm. This is an algorithm comparison, not a reproduction of either paper's full benchmark.", "", "## Artifacts and verification", "", f"All requested runs completed: **{complete}**. All matched checkpoints re-evaluated correctly: **{verified}**.", "", "Resolved configurations, throughput, code revision, package versions, losses, replay use, replacement counts, checkpoints, and raw curves are saved alongside this report. The comparison uses the shared completed-block prefix if a run did not finish; probe checkpoints with different ages are flagged in summary.json.", "", "The study runs `cycles` passes over the task sequence with no wall-clock budget; only worker profiling is time-boxed. Concurrency and qualification are recorded in summary.json. Pilot runs, profiling, intermediate checkpoints and source snapshots live under tmp/.", ""])
+    lines.extend(probe_notes(runs))
+    lines.extend(probe_result_notes(runs, LABELS))
+    lines.extend(tuning_notes(root))
+    if "probe_refresh" in report:
+        lines.extend(["", "The Asterix probes were rerun from the saved main-training checkpoints with the settings above. Main-training results and their checkpoint audits are unchanged. Probe rerun provenance is recorded in probe_refresh.json; its additional runtime is separate from the original study runtime."])
+    lines.extend(["", "## Retention and fresh-task learning", "", "![Performance](performance.png)", "", "Every task is evaluated at the shared environment-step grid and block boundaries. Each plotted measurement is the mean of the evaluation episodes at that checkpoint. Solid lines indicate training that task; dashed lines indicate training other tasks. Performance, baselines and plasticity diagnostics remain unsmoothed. Only probe curves use Gaussian smoothing; no plot is downsampled.", "", "Initial, midpoint and final Asterix probes use isolated weight copies, fresh optimizers and fresh-only updates with replay and CBP disabled. Probe returns are Gaussian-smoothed across episode order (sigma 200 episodes, kernel truncated at four sigma, reflected boundaries) and plotted at the original environment-step coordinates. Each phase is smoothed separately; raw episode logs are unchanged. The initial probe is the shared scratch reference. No separate probe evaluation or AUC score is used.", "", "![Probe curves](probe_curves.png)", "", "## Plasticity diagnostics", "", "![Plasticity diagnostics](plasticity.png)", "", "Actor and critic occupy separate rows. Each uses the most recent interaction activations, ordered by timestep then environment index across fresh transitions. Evaluation, replay and probes do not enter the window. Windows continue across episode and task boundaries.", "", "Stable rank is the smallest rank containing at least 99% of the uncentered final-hidden-layer singular-value mass, displayed as a percentage of layer width. Dormant units are active on at most 1% of observations, pooled across both hidden layers. Average weight magnitude is mean absolute weight excluding biases; the plot uses the second hidden linear layer, while every layer is logged."])
+    for arm, run in runs.items():
+        metadata = run.get("plasticity_metrics")
+        if metadata:
+            lines.append(f"- {LABELS[arm]}: window {metadata['window_steps']:,} transitions; dormant/weights every {metadata['period']:,}; rank every {metadata['rank_period']:,}.")
+        else:
+            lines.append(f"- {LABELS[arm]}: interaction diagnostics unavailable in these older logs; old metrics are not reused.")
+    lines.extend(diagnostic_notes(runs, common, LABELS))
+    lines.extend(["", "The rank and dormancy definitions follow the [authors' PPO diagnostics](https://github.com/shibhansh/loss-of-plasticity/blob/main/lop/rl/run_ppo.py), extended here to the critic. The criterion is singular-value mass, not squared-energy stable rank.", "", "## Implementation and verification", "", "All arms retain identical actor/critic initialization, AdamCBP, V-trace, learner batches and main-training budgets. CLEAR adds reservoir replay and replay-only policy/value cloning; CBP replaces low-contribution mature units and resets their optimizer state. This is a single-seed comparison, not a statistical ranking or a full paper reproduction.", "", f"All requested runs completed: **{complete}**. All matched checkpoints verified: **{verified}**.", "", "Per-arm CSV files retain raw episodes and diagnostics. summary.json records matched normalization references and probe completion/budgets. Configurations, checkpoint audits and source provenance are preserved. Pilot runs, profiling and intermediate checkpoints live in tmp/. No wall-clock budget limits the study.", ""])
     if clips:
         lines.extend(["### Representative clips", ""])
         for item in clips:
@@ -383,5 +455,7 @@ def finalize(root, config, qualification, manifest, deadline, saved_artifacts=No
             lines.append(f"- [{path.relative_to(root).parts[0]}: {item['task']}]({path.relative_to(root)}) — return {item['return']:.0f}.")
     if not any(run.get("probes") for run in runs.values()):
         lines = [line for line in lines if line != "![Probe curves](probe_curves.png)"]
+    if all((root / arm / "checkpoints" / f"{phase}.pt").exists() for arm in runs for phase in ("initial", "midpoint", "final")):
+        lines.extend(["", "Named phase checkpoints retain both networks and their configuration under each run's checkpoints/ directory. Run isolated probes again with:", "", "```bash", ".venv/bin/python -m src.probes --run results/cbp --out tmp/cbp_probes", "```", "", "Use --phase final to select one phase, or --config to choose probe settings. All three phases run by default; main-task training is not repeated."])
     (root / "REPORT.md").write_text("\n".join(lines) + "\n")
     return report

@@ -1,0 +1,49 @@
+{
+  "schema": 1,
+  "arm": "clear_cbp",
+  "suite": "minatar",
+  "seed": 0,
+  "blocks": [
+    "breakout",
+    "space_invaders",
+    "freeway",
+    "breakout",
+    "space_invaders",
+    "freeway",
+    "breakout",
+    "space_invaders",
+    "freeway",
+    "breakout",
+    "space_invaders",
+    "freeway",
+    "breakout",
+    "space_invaders",
+    "freeway"
+  ],
+  "completed_blocks": 15,
+  "env_steps": 7499520,
+  "attempted_env_steps": 7499520,
+  "planned_steps": 7499520,
+  "status": "complete",
+  "seconds": 1862.7135996818542,
+  "updates": 29295,
+  "transitions_per_second": 4026.1261856255815,
+  "gpu_peak_bytes": 49651200,
+  "probe_checkpoint_blocks": {
+    "initial": 0,
+    "midpoint": 7,
+    "final": 15
+  },
+  "plasticity_metrics": {
+    "schema": 1,
+    "window_steps": 1000,
+    "period": 1000,
+    "rank_period": 10000,
+    "source": "fresh interaction activations",
+    "ordering": "timestep then environment index",
+    "centered": false,
+    "stable_rank": "smallest rank containing at least 99% of singular-value mass",
+    "dormant": "active on at most 1% of observations, pooled over hidden units",
+    "weights": "per-linear-layer mean absolute weight, excluding bias"
+  }
+}
